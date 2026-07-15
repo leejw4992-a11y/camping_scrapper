@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>캠핑장 검색</title>
+  <style>
+    body { font-family: 'Malgun Gothic', sans-serif; margin: 30px; color:#222; }
+    h1 { font-size: 22px; }
+    form { margin-bottom: 18px; }
+    input[type=text] { padding: 8px; width: 200px; font-size: 15px; }
+    button { padding: 8px 14px; font-size: 15px; cursor: pointer; }
+    select { padding: 8px; font-size: 15px; }
+    .count { color:#555; margin: 10px 0; }
+    table { border-collapse: collapse; width: 100%; font-size: 14px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: top; }
+    th { background: #f4f4f4; }
+    tr:nth-child(even) { background: #fafafa; }
+    a { color:#1a73e8; }
+    .pager { margin: 20px 0; text-align: center; }
+    .pager a, .pager b { display: inline-block; margin: 0 4px; padding: 6px 10px;
+                          border: 1px solid #ddd; border-radius: 4px; text-decoration: none; }
+    .pager b { background: #1a73e8; color: #fff; border-color: #1a73e8; }  /* 현재 페이지 */
+    .hint { color:#888; font-size: 13px; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <h1>전국 캠핑장 검색</h1>
+
+  <!-- 검색 폼: 시도 -> 시군구 드롭다운으로 지역 선택 + 키워드(시설/이름) -->
+  <form method="get" action="/">
+    <select name="sido">
+      <option value="">시도 전체</option>
+      {% for s in sido_list %}
+        <option value="{{ s }}" {% if s == sido %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="sigungu">
+      <option value="">시군구 전체</option>
+      {% for g in sigungu_list %}
+        <option value="{{ g }}" {% if g == sigungu %}selected{% endif %}>{{ g }}</option>
+      {% endfor %}
+    </select>
+
+    <input type="text" name="region" value="{{ region }}"
+           placeholder="키워드(예: 글램핑, 전기)">
+    <select name="mode">
+      <option value="and" {% if mode != 'or' %}selected{% endif %}>모두 포함(AND)</option>
+      <option value="or"  {% if mode == 'or' %}selected{% endif %}>하나라도 포함(OR)</option>
+    </select>
+    <button type="submit">검색</button>
+    <div class="hint">시도를 고르고 검색하면 시군구 목록이 채워집니다. (시군구는 두 번째 검색부터 선택 가능)</div>
+  </form>
+
+  {% if region or sido or sigungu %}
+    <div class="count">
+      {{ sido }} {{ sigungu }} {{ region }} 검색 결과: <b>{{ total }}</b>개
+      {% if total_pages > 1 %}(전체 {{ total_pages }}페이지 중 {{ page }}페이지){% endif %}
+      {% if total %}
+        &nbsp;|&nbsp;
+        <a href="/download?region={{ region }}&mode={{ mode }}&sido={{ sido }}&sigungu={{ sigungu }}">엑셀(CSV)로 저장 (전체 {{ total }}개)</a>
+      {% endif %}
+    </div>
+
+    {% if rows %}
+    <table>
+      <tr>
+        <th>캠핑장명</th><th>주소</th><th>주요시설</th>
+        <th>데크사이트</th><th>파쇄석사이트</th><th>카라반사이트</th>
+        <th>화장실 개수</th><th>샤워실 개수</th>
+        <th>반려동물_동반여부</th><th>전화</th><th>예약</th>
+      </tr>
+      {% for r in rows %}
+      <tr>
+        <td>{{ r["캠핑장명"] }}</td>
+        <!-- <td>{{ r["업종"] }}</td> -->
+        <td>{{ r["주소"] }}</td>
+        <td>{{ r["주요시설"] }}</td>
+        <td>{{ r["데크사이트"] }}</td>
+        <td>{{ r["파쇄석사이트"] }}</td>
+        <td>{{ r["카라반사이트"] }}</td>
+        <td>{{ r["화장실(개)"] }}</td>
+        <td>{{ r["샤워실(개)"] }}</td>
+        <td>{{ r["반려동물_동반여부"] }}</td>
+        <td>{{ r["전화번호"] }}</td>
+        <td>
+          {% if r["예약페이지"] %}<a href="{{ r["예약페이지"] }}" target="_blank">예약</a>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+
+    <!-- 페이지 이동 버튼 -->
+    {% if total_pages > 1 %}
+    <div class="pager">
+      {% if page > 1 %}
+        <a href="/?region={{ region }}&mode={{ mode }}&sido={{ sido }}&sigungu={{ sigungu }}&page={{ page - 1 }}">이전</a>
+      {% endif %}
+
+      {% for p in page_numbers %}
+        {% if p == page %}
+          <b>{{ p }}</b>
+        {% else %}
+          <a href="/?region={{ region }}&mode={{ mode }}&sido={{ sido }}&sigungu={{ sigungu }}&page={{ p }}">{{ p }}</a>
+        {% endif %}
+      {% endfor %}
+
+      {% if page < total_pages %}
+        <a href="/?region={{ region }}&mode={{ mode }}&sido={{ sido }}&sigungu={{ sigungu }}&page={{ page + 1 }}">다음</a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+      <p>검색 결과가 없습니다. 다른 조건으로 검색해 보세요.</p>
+    {% endif %}
+  {% else %}
+    <p>시도를 고르거나 키워드를 입력해 검색해 보세요. (시도만 골라도 그 지역 전체가 나옵니다)</p>
+  {% endif %}
+</body>
+</html>
+
+
