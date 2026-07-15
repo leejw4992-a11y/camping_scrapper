@@ -71,7 +71,7 @@ def all_items():
 
 
 def get_campsites(region = "", mode='and',sido="", sigungu=""):
-    raw_list = fetch_all_items()
+    raw_list = all_items()
     result = []
 
     for one in raw_list:
@@ -83,6 +83,9 @@ def get_campsites(region = "", mode='and',sido="", sigungu=""):
             row[kor_name] = value
 
         if sido and row["시도"] != sido:
+            continue
+
+        if sigungu and row["시군구"] != sigungu:
             continue
 
         if region:
@@ -148,10 +151,4 @@ if __name__ == "__main__":
     campsites = get_campsites()
     save_to_csv(campsites, "campsite_list.csv")
     print(f"완료! 총 {len(campsites)}개 -> campsites_list.csv 저장")
-
-
-
-
-# 출발지 주소 입력.
-# 도착지 주소지는 캠핑장 주소
 

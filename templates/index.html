@@ -2,122 +2,176 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8">
-  <title>캠핑장 검색</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>전국 캠핑장 검색</title>
+  <link rel="stylesheet" as="style" crossorigin
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
   <style>
-    body { font-family: 'Malgun Gothic', sans-serif; margin: 30px; color:#222; }
-    h1 { font-size: 22px; }
-    form { margin-bottom: 18px; }
-    input[type=text] { padding: 8px; width: 200px; font-size: 15px; }
-    button { padding: 8px 14px; font-size: 15px; cursor: pointer; }
-    select { padding: 8px; font-size: 15px; }
-    .count { color:#555; margin: 10px 0; }
-    table { border-collapse: collapse; width: 100%; font-size: 14px; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: top; }
-    th { background: #f4f4f4; }
-    tr:nth-child(even) { background: #fafafa; }
-    a { color:#1a73e8; }
-    .pager { margin: 20px 0; text-align: center; }
-    .pager a, .pager b { display: inline-block; margin: 0 4px; padding: 6px 10px;
-                          border: 1px solid #ddd; border-radius: 4px; text-decoration: none; }
-    .pager b { background: #1a73e8; color: #fff; border-color: #1a73e8; }  /* 현재 페이지 */
-    .hint { color:#888; font-size: 13px; margin-top: 6px; }
+    :root{
+      --forest:#2c5f2d; --moss:#4a7c59;
+      --bg:#f6f8f5; --card:#ffffff; --ink:#233225; --body:#5b6b5d;
+      --muted:#8a988c; --line:#e6ebe4;
+    }
+    *{ box-sizing:border-box; }
+    body{ margin:0; background:var(--bg); color:var(--ink);
+      font-family:'Pretendard','Malgun Gothic',sans-serif; -webkit-font-smoothing:antialiased; }
+    .wrap{ max-width:1000px; margin:0 auto; padding:0 20px 60px; }
+
+    .hero{ background:linear-gradient(135deg,#2c5f2d 0%,#3f7d43 60%,#5a9a53 100%);
+      color:#fff; padding:44px 0 40px; margin-bottom:-28px; }
+    .hero .inner{ max-width:1000px; margin:0 auto; padding:0 20px; }
+    .hero h1{ margin:0; font-size:30px; font-weight:700; letter-spacing:-.5px; }
+    .hero p{ margin:8px 0 0; font-size:15px; opacity:.9; }
+
+    .search{ background:var(--card); border:1px solid var(--line); border-radius:16px;
+      box-shadow:0 8px 24px rgba(44,95,45,.08); padding:20px;
+      display:flex; flex-wrap:wrap; gap:10px; align-items:center; position:relative; z-index:2; }
+    .search select,.search input[type=text]{ appearance:none; border:1px solid var(--line);
+      background:#fbfcfa; border-radius:10px; padding:12px 14px; font-size:15px; color:var(--ink);
+      font-family:inherit; outline:none; transition:border-color .15s,box-shadow .15s; }
+    .search select:focus,.search input:focus{ border-color:var(--moss); box-shadow:0 0 0 3px rgba(74,124,89,.15); }
+    .search input[type=text]{ flex:1; min-width:180px; }
+    .search select{ min-width:130px; }
+    .btn{ background:var(--forest); color:#fff; border:0; border-radius:10px; padding:12px 22px;
+      font-size:15px; font-weight:600; cursor:pointer; font-family:inherit; transition:background .15s,transform .05s; }
+    .btn:hover{ background:#24501f; } .btn:active{ transform:translateY(1px); }
+    .hint{ width:100%; color:var(--muted); font-size:12.5px; margin-top:2px; }
+
+    .result-bar{ display:flex; align-items:center; justify-content:space-between;
+      margin:28px 4px 16px; flex-wrap:wrap; gap:10px; }
+    .count{ font-size:15px; color:var(--body); }
+    .count b{ color:var(--forest); font-size:18px; }
+    .download{ display:inline-flex; align-items:center; gap:6px; text-decoration:none;
+      background:#fff; border:1px solid var(--forest); color:var(--forest); border-radius:10px;
+      padding:9px 16px; font-size:14px; font-weight:600; transition:background .15s,color .15s; }
+    .download:hover{ background:var(--forest); color:#fff; }
+
+    .list{ display:grid; grid-template-columns:repeat(auto-fill,minmax(460px,1fr)); gap:14px; }
+    .camp{ background:var(--card); border:1px solid var(--line); border-radius:14px;
+      padding:18px 20px; box-shadow:0 4px 14px rgba(44,95,45,.05); }
+    .camp .top{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .camp .name{ font-size:17px; font-weight:700; color:var(--ink); }
+    .camp .right{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
+    .pet{ font-size:12px; font-weight:600; padding:4px 10px; border-radius:999px; }
+    .pet.ok{ background:#e7f3e2; color:var(--forest); }
+    .pet.no{ background:#f0efe9; color:var(--muted); }
+    .resv{ background:var(--forest); color:#fff; text-decoration:none; font-size:12px; font-weight:600;
+      padding:6px 14px; border-radius:999px; }
+    .resv:hover{ background:#24501f; }
+    .addr{ display:flex; align-items:center; gap:6px; color:var(--body); font-size:14px; margin:9px 0 2px; }
+    .tel{ color:var(--muted); font-size:13px; margin-top:4px; }
+    .facil{ margin-top:11px; display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+    .glabel{ font-size:11.5px; color:var(--muted); font-weight:600; margin:0 2px 0 4px; }
+    .chip{ display:inline-block; background:#eef3ea; color:var(--moss); font-size:12px;
+      padding:4px 10px; border-radius:8px; white-space:nowrap; }
+    .chip.num{ background:#eaf0f6; color:#3a6ea5; }
+
+    .pager{ margin:26px 0 0; text-align:center; }
+    .pager a,.pager b{ display:inline-block; min-width:40px; margin:0 3px; padding:9px 12px;
+      border:1px solid var(--line); border-radius:10px; text-decoration:none; color:var(--body);
+      font-size:14px; background:#fff; }
+    .pager a:hover{ border-color:var(--moss); color:var(--forest); }
+    .pager b{ background:var(--forest); color:#fff; border-color:var(--forest); font-weight:600; }
+
+    .empty{ background:var(--card); border:1px dashed var(--line); border-radius:16px;
+      padding:56px 24px; text-align:center; color:var(--muted); font-size:15px; }
+    .empty .big{ font-size:34px; margin-bottom:10px; }
+    @media (max-width:560px){
+      .search{ flex-direction:column; align-items:stretch; }
+      .search select,.search input,.btn{ width:100%; }
+      .list{ grid-template-columns:1fr; }
+    }
   </style>
 </head>
 <body>
-  <h1>전국 캠핑장 검색</h1>
-
-  <!-- 검색 폼: 시도 -> 시군구 드롭다운으로 지역 선택 + 키워드(시설/이름) -->
-  <form method="get" action="/">
-    <select name="sido">
-      <option value="">시도 전체</option>
-      {% for s in sido_list %}
-        <option value="{{ s }}" {% if s == sido %}selected{% endif %}>{{ s }}</option>
-      {% endfor %}
-    </select>
-
-    <select name="sigungu">
-      <option value="">시군구 전체</option>
-      {% for g in sigungu_list %}
-        <option value="{{ g }}" {% if g == sigungu %}selected{% endif %}>{{ g }}</option>
-      {% endfor %}
-    </select>
-
-    <input type="text" name="region" value="{{ region }}"
-           placeholder="키워드(예: 글램핑, 전기)">
-    <select name="mode">
-      <option value="and" {% if mode != 'or' %}selected{% endif %}>모두 포함(AND)</option>
-      <option value="or"  {% if mode == 'or' %}selected{% endif %}>하나라도 포함(OR)</option>
-    </select>
-    <button type="submit">검색</button>
-    <div class="hint">시도를 고르고 검색하면 시군구 목록이 채워집니다. (시군구는 두 번째 검색부터 선택 가능)</div>
-  </form>
-
-  {% if region or sido or sigungu %}
-    <div class="count">
-      {{ sido }} {{ sigungu }} {{ region }} 검색 결과: <b>{{ total }}</b>개
-      {% if total_pages > 1 %}(전체 {{ total_pages }}페이지 중 {{ page }}페이지){% endif %}
-      {% if total %}
-        &nbsp;|&nbsp;
-        <a href="/download?region={{ region }}&mode={{ mode }}&sido={{ sido }}&sigungu={{ sigungu }}">엑셀(CSV)로 저장 (전체 {{ total }}개)</a>
-      {% endif %}
+  <header class="hero">
+    <div class="inner">
+      <h1>🏕️ 전국 캠핑장 검색</h1>
+      <p>공공데이터 고캠핑 API로 전국 캠핑장을 지역·시설 조건으로 찾아보세요</p>
     </div>
+  </header>
 
-    {% if rows %}
-    <table>
-      <tr>
-        <th>캠핑장명</th><th>주소</th><th>주요시설</th>
-        <th>데크사이트</th><th>파쇄석사이트</th><th>카라반사이트</th>
-        <th>화장실 개수</th><th>샤워실 개수</th>
-        <th>반려동물_동반여부</th><th>전화</th><th>예약</th>
-      </tr>
-      {% for r in rows %}
-      <tr>
-        <td>{{ r["캠핑장명"] }}</td>
-        <!-- <td>{{ r["업종"] }}</td> -->
-        <td>{{ r["주소"] }}</td>
-        <td>{{ r["주요시설"] }}</td>
-        <td>{{ r["데크사이트"] }}</td>
-        <td>{{ r["파쇄석사이트"] }}</td>
-        <td>{{ r["카라반사이트"] }}</td>
-        <td>{{ r["화장실(개)"] }}</td>
-        <td>{{ r["샤워실(개)"] }}</td>
-        <td>{{ r["반려동물_동반여부"] }}</td>
-        <td>{{ r["전화번호"] }}</td>
-        <td>
-          {% if r["예약페이지"] %}<a href="{{ r["예약페이지"] }}" target="_blank">예약</a>{% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </table>
+  <div class="wrap">
+    <form class="search" method="get" action="/">
+      <select name="sido">
+        <option value="">시도 전체</option>
+        {% for s in sido_list %}
+          <option value="{{ s }}" {% if s == sido %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+      <select name="sigungu">
+        <option value="">시군구 전체</option>
+        {% for g in sigungu_list %}
+          <option value="{{ g }}" {% if g == sigungu %}selected{% endif %}>{{ g }}</option>
+        {% endfor %}
+      </select>
+      <input type="text" name="region" value="{{ region }}" placeholder="키워드 (예: 전기, 데크)">
+      <select name="mode">
+        <option value="and" {% if mode != 'or' %}selected{% endif %}>모두 포함(AND)</option>
+        <option value="or"  {% if mode == 'or' %}selected{% endif %}>하나라도 포함(OR)</option>
+      </select>
+      <button class="btn" type="submit">검색</button>
+      <div class="hint">시도를 고르고 검색하면 시군구 목록이 채워집니다.</div>
+    </form>
 
-    <!-- 페이지 이동 버튼 -->
-    {% if total_pages > 1 %}
-    <div class="pager">
-      {% if page > 1 %}
-        <a href="/?region={{ region }}&mode={{ mode }}&sido={{ sido }}&sigungu={{ sigungu }}&page={{ page - 1 }}">이전</a>
-      {% endif %}
-
-      {% for p in page_numbers %}
-        {% if p == page %}
-          <b>{{ p }}</b>
-        {% else %}
-          <a href="/?region={{ region }}&mode={{ mode }}&sido={{ sido }}&sigungu={{ sigungu }}&page={{ p }}">{{ p }}</a>
+    {% if region or sido or sigungu %}
+      <div class="result-bar">
+        <div class="count">
+          <b>{{ total }}</b>개 검색됨
+          <span style="color:var(--muted)">— {{ sido }} {{ sigungu }} {{ region }}</span>
+          {% if total_pages > 1 %}<span style="color:var(--muted)">· {{ page }}/{{ total_pages }} 페이지</span>{% endif %}
+        </div>
+        {% if total %}
+        <a class="download" href="/download?region={{ region }}&mode={{ mode }}&sido={{ sido }}&sigungu={{ sigungu }}">⬇ 엑셀(CSV)로 저장</a>
         {% endif %}
+      </div>
+
+      {% if rows %}
+      <div class="list">
+      {% for r in rows %}
+        <div class="camp">
+          <div class="top">
+            <span class="name">{{ r["캠핑장명"] }}</span>
+            <span class="right">
+              {% if r["반려동물_동반여부"] %}
+                <span class="pet {% if '가능' in r['반려동물_동반여부'] and '불' not in r['반려동물_동반여부'] %}ok{% else %}no{% endif %}">반려동물 {{ r["반려동물_동반여부"] }}</span>
+              {% endif %}
+              {% if r["예약페이지"] %}<a class="resv" href="{{ r['예약페이지'] }}" target="_blank">예약</a>{% endif %}
+            </span>
+          </div>
+          <div class="addr">📍 {{ r["주소"] }}</div>
+          {% if r["전화번호"] %}<div class="tel">☎ {{ r["전화번호"] }}</div>{% endif %}
+
+          {% set main_f = r["주요시설"].split(',') | map('trim') | select | list %}
+          <div class="facil">
+            {% for f in main_f %}<span class="chip">{{ f }}</span>{% endfor %}
+
+            {% if r["데크사이트"] and r["데크사이트"] != "0" %}<span class="chip num">데크 {{ r["데크사이트"] }}</span>{% endif %}
+            {% if r["파쇄석사이트"] and r["파쇄석사이트"] != "0" %}<span class="chip num">파쇄석 {{ r["파쇄석사이트"] }}</span>{% endif %}
+            {% if r["카라반사이트"] and r["카라반사이트"] != "0" %}<span class="chip num">카라반 {{ r["카라반사이트"] }}</span>{% endif %}
+            {% if r["화장실(개)"] and r["화장실(개)"] != "0" %}<span class="chip num">화장실 {{ r["화장실(개)"] }}</span>{% endif %}
+            {% if r["샤워실(개)"] and r["샤워실(개)"] != "0" %}<span class="chip num">샤워실 {{ r["샤워실(개)"] }}</span>{% endif %}
+          </div>
+        </div>
       {% endfor %}
+      </div>
 
-      {% if page < total_pages %}
-        <a href="/?region={{ region }}&mode={{ mode }}&sido={{ sido }}&sigungu={{ sigungu }}&page={{ page + 1 }}">다음</a>
+      {% if total_pages > 1 %}
+      <div class="pager">
+        {% if page > 1 %}<a href="/?region={{ region }}&mode={{ mode }}&sido={{ sido }}&sigungu={{ sigungu }}&page={{ page - 1 }}">이전</a>{% endif %}
+        {% for p in page_numbers %}
+          {% if p == page %}<b>{{ p }}</b>{% else %}<a href="/?region={{ region }}&mode={{ mode }}&sido={{ sido }}&sigungu={{ sigungu }}&page={{ p }}">{{ p }}</a>{% endif %}
+        {% endfor %}
+        {% if page < total_pages %}<a href="/?region={{ region }}&mode={{ mode }}&sido={{ sido }}&sigungu={{ sigungu }}&page={{ page + 1 }}">다음</a>{% endif %}
+      </div>
       {% endif %}
-    </div>
-    {% endif %}
 
+      {% else %}
+        <div class="empty"><div class="big">🔍</div>검색 결과가 없습니다. 다른 조건으로 검색해 보세요.</div>
+      {% endif %}
     {% else %}
-      <p>검색 결과가 없습니다. 다른 조건으로 검색해 보세요.</p>
+      <div class="empty"><div class="big">⛺</div>시도를 고르거나 키워드를 입력해 검색해 보세요.<br>시도만 골라도 그 지역 전체가 나옵니다.</div>
     {% endif %}
-  {% else %}
-    <p>시도를 고르거나 키워드를 입력해 검색해 보세요. (시도만 골라도 그 지역 전체가 나옵니다)</p>
-  {% endif %}
+  </div>
 </body>
 </html>
-
-
