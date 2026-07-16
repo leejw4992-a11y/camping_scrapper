@@ -133,11 +133,27 @@ def api_weather():
     if not points:
         return jsonify({"ok": False, "error": "좌표가 없어요."})
 
-    lats = ",".join(str(p[0]) for p in points)
-    lngs = ",".join(str(p[1]) for p in points)
+    # 유효한 숫자 좌표만 추려서 보낸다.
+    # (좌표 하나가 빈 값·0·한국 범위 밖이면 그 요청 전체가 실패할 수 있어서 미리 걸러냄)
+    valid = []   # (원래 순번, 위도, 경도)
+    for idx, p in enumerate(points):
+        try:
+            lat = float(p[0])
+            lng = float(p[1])
+        except (TypeError, ValueError, IndexError):
+            continue
+        if not (33.0 <= lat <= 39.0 and 124.0 <= lng <= 132.0):
+            continue   # 한국(남한) 범위 밖이면 제외
+        valid.append((idx, lat, lng))
+
+    results = [{"ok": False} for _ in points]
+    if not valid:
+        # 보낼 만한 좌표가 하나도 없으면 그냥 빈 결과
+        return jsonify({"ok": True, "list": results})
+
     params = {
-        "latitude": lats,
-        "longitude": lngs,
+        "latitude": ",".join(str(v[1]) for v in valid),
+        "longitude": ",".join(str(v[2]) for v in valid),
         "daily": "weather_code,temperature_2m_max,temperature_2m_min",
         "timezone": "Asia/Seoul",
         "forecast_days": 10,   # 다음 주말까지 확실히 포함되도록 넉넉히
@@ -148,6 +164,10 @@ def api_weather():
     except Exception as e:
         return jsonify({"ok": False, "error": f"날씨 서버 연결 실패: {e}"})
 
+    # Open-Meteo가 오류를 돌려주면 그 이유를 그대로 보여준다(원인 파악용)
+    if isinstance(data, dict) and data.get("error"):
+        return jsonify({"ok": False, "error": f"Open-Meteo: {data.get('reason')}"})
+
     # 좌표가 하나면 dict, 여러 개면 list로 온다
     locs = data if isinstance(data, list) else [data]
     try:
@@ -155,8 +175,8 @@ def api_weather():
     except Exception:
         return jsonify({"ok": False, "error": "예보를 읽지 못했어요."})
 
-    results = []
-    for loc in locs:
+    # 걸러낸 좌표 순서대로 결과를 원래 순번 자리에 채워 넣는다
+    for (orig_idx, _, _), loc in zip(valid, locs):
         try:
             d = loc["daily"]
             days = []
@@ -172,9 +192,9 @@ def api_weather():
                     "tmax": round(d["temperature_2m_max"][i]),
                     "tmin": round(d["temperature_2m_min"][i]),
                 })
-            results.append({"ok": True, "days": days})
+            results[orig_idx] = {"ok": True, "days": days}
         except Exception:
-            results.append({"ok": False})
+            results[orig_idx] = {"ok": False}
 
     return jsonify({"ok": True, "list": results})
 
