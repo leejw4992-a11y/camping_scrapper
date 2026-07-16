@@ -53,6 +53,15 @@
     .typ.etc{ background:#eeeeea; color:#6a6a63; }
     .addr{ display:flex; align-items:center; gap:6px; color:var(--body); font-size:14px; margin:8px 0 2px; }
     .tel{ color:var(--muted); font-size:13px; margin-top:4px; }
+    /* ── 소요시간 버튼/결과 ── */
+    .timebox{ margin-top:10px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .timebtn{ background:#eef3ea; border:1px solid var(--line); color:var(--forest);
+      border-radius:999px; padding:7px 14px; font-size:13px; font-weight:600; cursor:pointer;
+      font-family:inherit; transition:background .15s,color .15s; }
+    .timebtn:hover{ background:var(--forest); color:#fff; }
+    .timebtn:disabled{ background:#eef3ea; color:var(--muted); cursor:default; }
+    .timeresult{ font-size:13.5px; font-weight:600; color:var(--forest); }
+    .timeresult.err{ color:#d33; font-weight:500; }
     .facil{ margin-top:11px; display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
     .clabel{ width:100%; font-size:11.5px; color:var(--muted); font-weight:600; margin:6px 0 1px; }
     .clabel:first-child{ margin-top:0; }
@@ -75,8 +84,8 @@
 <body>
   <header class="hero">
     <div class="inner">
-      <h1>🏕️ 전국 캠핑장 검색</h1>
-      <p>공공데이터 고캠핑 API로 전국 캠핑장을 지역·업종·시설로 찾아보세요</p>
+      <h1>전국 캠핑장 검색</h1>
+      <p>전국 캠핑장을 지역·업종·시설로 찾아보세요</p>
     </div>
   </header>
 
@@ -96,11 +105,11 @@
       </select>
       <input type="text" name="region" value="{{ region }}" placeholder="키워드 (예: 글램핑, 전기)">
       <select name="mode">
-        <option value="and" {% if mode != 'or' %}selected{% endif %}>모두 포함(AND)</option>
-        <option value="or"  {% if mode == 'or' %}selected{% endif %}>하나라도 포함(OR)</option>
+        <!-- <option value="and" {% if mode != 'or' %}selected{% endif %}>모두 포함(AND)</option>
+        <option value="or"  {% if mode == 'or' %}selected{% endif %}>하나라도 포함(OR)</option> -->
       </select>
       <button class="btn" type="submit">검색</button>
-      <div class="hint">시도를 고르고 검색하면 시군구 목록이 채워집니다.</div>
+      <div class="hint">시도를 고르고 검색하면 시군구 목록이 채워집니다. · 각 캠핑장의 소요시간 버튼을 누르면 현재 위치 기준 이동시간이 나옵니다.</div>
     </form>
 
     {% if region or sido or sigungu %}
@@ -135,6 +144,13 @@
 
           <div class="addr">📍 {{ r["주소"] }}</div>
           {% if r["전화번호"] %}<div class="tel">☎ {{ r["전화번호"] }}</div>{% endif %}
+
+          {% if r["위도"] and r["경도"] %}
+          <div class="timebox">
+            <button class="timebtn" data-lat="{{ r['위도'] }}" data-lng="{{ r['경도'] }}">🚗 현재 위치에서 소요시간</button>
+            <span class="timeresult"></span>
+          </div>
+          {% endif %}
 
           {% set main_f = r["주요시설"].split(',') | map('trim') | select | list %}
           {% set cat_def = [
@@ -185,5 +201,48 @@
       <div class="empty"><div class="big">⛺</div>시도를 고르거나 키워드를 입력해 검색해 보세요.<br>시도만 골라도 그 지역 전체가 나옵니다.</div>
     {% endif %}
   </div>
+
+  <script>
+    // 현재 위치는 한 번만 받아서 재사용한다 (버튼 누를 때마다 다시 안 물어봄)
+    let myLoc = null;
+    function ensureLocation(){
+      return new Promise((resolve, reject)=>{
+        if(myLoc){ resolve(myLoc); return; }
+        if(!navigator.geolocation){ reject("이 브라우저는 위치 기능을 지원하지 않아요."); return; }
+        navigator.geolocation.getCurrentPosition(
+          (pos)=>{ myLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude }; resolve(myLoc); },
+          ()=> reject("위치 권한을 허용해 주세요."),
+          { enableHighAccuracy:true }
+        );
+      });
+    }
+
+    // 각 카드의 소요시간 버튼에 클릭 동작 연결
+    document.querySelectorAll('.timebtn').forEach((btn)=>{
+      btn.addEventListener('click', async ()=>{
+        const out = btn.nextElementSibling;   // 옆의 .timeresult
+        out.className = "timeresult";
+        out.textContent = " 위치 확인 중...";
+        try{
+          const loc = await ensureLocation();
+          out.textContent = " 계산 중...";
+          const url = `/api/duration?slat=${loc.lat}&slng=${loc.lng}`
+                    + `&glat=${btn.dataset.lat}&glng=${btn.dataset.lng}`;
+          const res = await fetch(url);
+          const d = await res.json();
+          if(!d.ok){
+            out.className = "timeresult err";
+            out.textContent = " " + d.error;
+            return;
+          }
+          out.textContent = ` 약 ${d.time_text} · ${d.distance_km}km`;
+          btn.disabled = true;               // 계산 끝나면 버튼 비활성화
+        }catch(e){
+          out.className = "timeresult err";
+          out.textContent = " " + e;
+        }
+      });
+    });
+  </script>
 </body>
 </html>

@@ -20,6 +20,8 @@ FIELD_MAP = {
     "siteMg3Co" : "카라반사이트",
     "doNm" : "시도",
     "sigunguNm" : "시군구",
+    "mapX" : "경도",   # ← 추가: 소요시간 계산에 쓸 좌표(경도)
+    "mapY" : "위도",   # ← 추가: 소요시간 계산에 쓸 좌표(위도)
 }
 
 
@@ -93,7 +95,7 @@ def get_campsites(region = "", mode='and',sido="", sigungu=""):
             haystack= " ".join([
                 row["시도"], row["시군구"], row["주소"], row["캠핑장명"],
                 row["주요시설"], row["화장실(개)"],
-                row["샤워실(개)"], row["반려동물_동반여부"], 
+                row["샤워실(개)"], row["반려동물_동반여부"],
                 row["데크사이트"],row["파쇄석사이트"],row["카라반사이트"],
             ])
             keywords = region.split()
@@ -152,4 +154,3 @@ if __name__ == "__main__":
     campsites = get_campsites()
     save_to_csv(campsites, "campsite_list.csv")
     print(f"완료! 총 {len(campsites)}개 -> campsites_list.csv 저장")
-
