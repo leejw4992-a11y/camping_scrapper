@@ -146,9 +146,12 @@ def api_weather():
             continue   # 한국(남한) 범위 밖이면 제외
         valid.append((idx, lat, lng))
 
+    print(f"[날씨] 받은 좌표 {len(points)}개 중 유효 {len(valid)}개")
+
     results = [{"ok": False} for _ in points]
     if not valid:
         # 보낼 만한 좌표가 하나도 없으면 그냥 빈 결과
+        print("[날씨] 유효한 좌표가 없어 요청 안 함")
         return jsonify({"ok": True, "list": results})
 
     params = {
@@ -162,17 +165,20 @@ def api_weather():
         res = requests.get("https://api.open-meteo.com/v1/forecast", params=params, timeout=15)
         data = res.json()
     except Exception as e:
+        print("[날씨] 연결 실패:", e)
         return jsonify({"ok": False, "error": f"날씨 서버 연결 실패: {e}"})
 
     # Open-Meteo가 오류를 돌려주면 그 이유를 그대로 보여준다(원인 파악용)
     if isinstance(data, dict) and data.get("error"):
+        print("[날씨] Open-Meteo 오류:", data.get("reason"))
         return jsonify({"ok": False, "error": f"Open-Meteo: {data.get('reason')}"})
 
     # 좌표가 하나면 dict, 여러 개면 list로 온다
     locs = data if isinstance(data, list) else [data]
     try:
         weekend = _weekend_indices(locs[0]["daily"]["time"])
-    except Exception:
+    except Exception as ex:
+        print("[날씨] 파싱 실패:", ex, "| 응답 일부:", str(data)[:300])
         return jsonify({"ok": False, "error": "예보를 읽지 못했어요."})
 
     # 걸러낸 좌표 순서대로 결과를 원래 순번 자리에 채워 넣는다
