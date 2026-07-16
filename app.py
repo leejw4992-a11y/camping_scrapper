@@ -1,6 +1,7 @@
 import io
 import os
 import csv
+import datetime
 import requests
 from flask import Flask,request, render_template, Response, jsonify
 
@@ -88,6 +89,94 @@ def api_sigungu():
     (검색 버튼을 누르지 않아도 시군구를 바로 고를 수 있게 하기 위함)"""
     sido = request.args.get("sido", "").strip()
     return jsonify(get_sigungu_list(sido))
+
+
+# WMO 날씨 코드 → (이모지, 한글 설명)
+WEATHER_CODES = {
+    0: ("☀️", "맑음"),
+    1: ("🌤️", "대체로 맑음"), 2: ("⛅", "구름 조금"), 3: ("☁️", "흐림"),
+    45: ("🌫️", "안개"), 48: ("🌫️", "안개"),
+    51: ("🌦️", "약한 이슬비"), 53: ("🌦️", "이슬비"), 55: ("🌦️", "짙은 이슬비"),
+    56: ("🌧️", "어는 이슬비"), 57: ("🌧️", "어는 이슬비"),
+    61: ("🌧️", "약한 비"), 63: ("🌧️", "비"), 65: ("🌧️", "강한 비"),
+    66: ("🌧️", "어는 비"), 67: ("🌧️", "어는 비"),
+    71: ("🌨️", "약한 눈"), 73: ("🌨️", "눈"), 75: ("🌨️", "강한 눈"), 77: ("🌨️", "싸락눈"),
+    80: ("🌦️", "소나기"), 81: ("🌦️", "소나기"), 82: ("🌦️", "강한 소나기"),
+    85: ("🌨️", "소나기눈"), 86: ("🌨️", "소나기눈"),
+    95: ("⛈️", "뇌우"), 96: ("⛈️", "우박 뇌우"), 99: ("⛈️", "우박 뇌우"),
+}
+
+
+WEEKDAYS = ["월", "화", "수", "목", "금", "토", "일"]
+
+
+def _weekend_indices(dates):
+    """예보 날짜 목록에서 '다가오는 금요일'을 찾아 금·토·일 3일의 인덱스를 돌려준다."""
+    parsed = [datetime.date.fromisoformat(x) for x in dates]
+    fri = None
+    for i, dt in enumerate(parsed):
+        if dt.weekday() == 4:   # 금요일
+            fri = i
+            break
+    if fri is None:
+        return list(range(min(3, len(dates))))
+    return [i for i in (fri, fri + 1, fri + 2) if i < len(dates)]
+
+
+@app.route("/api/weather", methods=["POST"])
+def api_weather():
+    """여러 캠핑장 좌표를 한 번에 받아, 다가오는 주말(금·토·일) 예보를 돌려준다.
+    무료 서비스 Open-Meteo 사용 (API 키 불필요).
+    요청 본문 예: {"points": [[37.5,127.9],[37.8,127.5], ...]}"""
+    body = request.get_json(silent=True) or {}
+    points = body.get("points") or []
+    if not points:
+        return jsonify({"ok": False, "error": "좌표가 없어요."})
+
+    lats = ",".join(str(p[0]) for p in points)
+    lngs = ",".join(str(p[1]) for p in points)
+    params = {
+        "latitude": lats,
+        "longitude": lngs,
+        "daily": "weather_code,temperature_2m_max,temperature_2m_min",
+        "timezone": "Asia/Seoul",
+        "forecast_days": 10,   # 다음 주말까지 확실히 포함되도록 넉넉히
+    }
+    try:
+        res = requests.get("https://api.open-meteo.com/v1/forecast", params=params, timeout=15)
+        data = res.json()
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"날씨 서버 연결 실패: {e}"})
+
+    # 좌표가 하나면 dict, 여러 개면 list로 온다
+    locs = data if isinstance(data, list) else [data]
+    try:
+        weekend = _weekend_indices(locs[0]["daily"]["time"])
+    except Exception:
+        return jsonify({"ok": False, "error": "예보를 읽지 못했어요."})
+
+    results = []
+    for loc in locs:
+        try:
+            d = loc["daily"]
+            days = []
+            for i in weekend:
+                code = int(d["weather_code"][i])
+                icon, desc = WEATHER_CODES.get(code, ("🌡️", "날씨"))
+                dt = datetime.date.fromisoformat(d["time"][i])
+                days.append({
+                    "label": WEEKDAYS[dt.weekday()],
+                    "date": dt.strftime("%m/%d"),
+                    "icon": icon,
+                    "desc": desc,
+                    "tmax": round(d["temperature_2m_max"][i]),
+                    "tmin": round(d["temperature_2m_min"][i]),
+                })
+            results.append({"ok": True, "days": days})
+        except Exception:
+            results.append({"ok": False})
+
+    return jsonify({"ok": True, "list": results})
 
 
 @app.route("/api/duration")
@@ -184,5 +273,3 @@ if __name__ == "__main__":
     # Render에서는 gunicorn이 app 객체를 직접 불러 쓰므로 이 블록은 실행되지 않는다.
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
-
-

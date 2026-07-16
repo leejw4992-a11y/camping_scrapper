@@ -23,6 +23,7 @@ FIELD_MAP = {
     "animalCmgCl" : "반려동물_동반여부",
     "tel" : "전화번호",
     "resveUrl" : "예약페이지",
+    "firstImageUrl" : "대표사진",   # ← 추가: 카드에 보여줄 대표 사진 주소
     "siteMg1Co" : "데크사이트",
     "siteMg2Co" : "파쇄석사이트",
     "siteMg3Co" : "카라반사이트",
@@ -117,22 +118,27 @@ def get_campsites(region = "", mode='and',sido="", sigungu=""):
         if region:
             haystack= " ".join([
                 row["시도"], row["시군구"], row["주소"], row["캠핑장명"],
+                row["업종"],                     # ← 추가: 글램핑·카라반·오토캠핑 등 업종으로도 검색됨
                 row["주요시설"], row["화장실(개)"],
                 row["샤워실(개)"], row["반려동물_동반여부"],
                 row["데크사이트"],row["파쇄석사이트"],row["카라반사이트"],
             ])
+            # 공백을 무시하고 비교한다.
+            # (예: 데이터에는 "금호강 오토캠핑장"인데 검색어는 "금호강오토캠핑장"처럼
+            #  붙여 쓴 경우에도 찾을 수 있도록, 양쪽에서 띄어쓰기를 지운 뒤 비교)
+            haystack_c = haystack.replace(" ", "")
             keywords = region.split()
 
             if mode == "or":
                 matched = False
                 for kw in keywords:
-                    if kw in haystack:
+                    if kw.replace(" ", "") in haystack_c:
                         matched = True
                         break
             else:
                 matched = True
                 for kw in keywords:
-                    if kw not in haystack:
+                    if kw.replace(" ", "") not in haystack_c:
                         matched = False
                         break
             if not matched:
