@@ -1,4 +1,5 @@
 import io
+import os
 import csv
 import requests
 from flask import Flask,request, render_template, Response, jsonify
@@ -13,8 +14,10 @@ PER_PAGE = 20
 # 소요시간 계산용 네이버 클라우드 Maps 키 (Directions 5)
 # 네이버 클라우드 콘솔 > Maps > Application > 인증 정보
 # ============================================================
-NAVER_KEY_ID = "dvm06v1qnm"
-NAVER_KEY    = "SWo3XbOhDFxDzBCFIxkeMeIgcK3GxrD1K5gSsUZB"
+# 보안을 위해 Render 대시보드의 Environment(환경변수)에 넣는 걸 권장.
+# 환경변수가 없으면 아래 기본값을 그대로 쓰므로, 안 넣어도 일단 동작은 한다.
+NAVER_KEY_ID = os.environ.get("NAVER_KEY_ID", "dvm06v1qnm")
+NAVER_KEY    = os.environ.get("NAVER_KEY", "SWo3XbOhDFxDzBCFIxkeMeIgcK3GxrD1K5gSsUZB")
 
 # 네이버가 도메인을 두 가지로 운영 중이라, 되는 쪽을 자동으로 찾는다
 # (새 Maps = maps..., 구형 = naveropenapi...)
@@ -22,6 +25,12 @@ DIRECTION_URLS = [
     "https://maps.apigw.ntruss.com/map-direction/v1/driving",
     "https://naveropenapi.apigw.ntruss.com/map-direction/v1/driving",
 ]
+
+
+@app.route("/healthz")
+def healthz():
+    """Render가 서버 살아있는지 확인할 때 쓰는 가벼운 주소. 데이터는 안 건드린다."""
+    return "ok", 200
 
 
 @app.route("/")
@@ -71,6 +80,14 @@ def index():
         total=total,
         page_numbers=page_numbers,
     )
+
+
+@app.route("/api/sigungu")
+def api_sigungu():
+    """시도를 고르면, 그 시도에 속한 시군구 목록을 JSON으로 돌려준다.
+    (검색 버튼을 누르지 않아도 시군구를 바로 고를 수 있게 하기 위함)"""
+    sido = request.args.get("sido", "").strip()
+    return jsonify(get_sigungu_list(sido))
 
 
 @app.route("/api/duration")
@@ -163,4 +180,9 @@ def download():
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    # 내 컴퓨터에서 직접 python app.py 로 실행할 때만 쓰는 부분.
+    # Render에서는 gunicorn이 app 객체를 직접 불러 쓰므로 이 블록은 실행되지 않는다.
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
+
+

@@ -3,124 +3,305 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>전국 캠핑장 검색</title>
+  <title>NALGAE CAMP · 전국 캠핑장 안내소</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bitter:ital,wght@0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
   <link rel="stylesheet" as="style" crossorigin
         href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
   <style>
-    :root{ --forest:#2c5f2d; --moss:#4a7c59; --bg:#f6f8f5; --card:#ffffff;
-      --ink:#233225; --body:#5b6b5d; --muted:#8a988c; --line:#e6ebe4; }
+    :root{
+      --paper:#f3ecdb;      /* 크림 종이 */
+      --paper2:#ece2cb;     /* 살짝 진한 종이 */
+      --card:#fbf7ec;       /* 카드 바탕 */
+      --pine:#274637;       /* 삼나무 딥그린 */
+      --pine2:#3c6349;      /* 밝은 초록 */
+      --rust:#b1492e;       /* 러스트(강조) */
+      --mustard:#cf9a34;    /* 머스터드 */
+      --ink:#2c2519;        /* 잉크 브라운 */
+      --body:#5b5241;       /* 본문 */
+      --muted2:#948a72;     /* 흐린 글씨 */
+      --line:#d8ccae;       /* 테두리 */
+      --line2:#c7b891;      /* 진한 테두리 */
+    }
     *{ box-sizing:border-box; }
-    body{ margin:0; background:var(--bg); color:var(--ink);
-      font-family:'Pretendard','Malgun Gothic',sans-serif; -webkit-font-smoothing:antialiased; }
-    .wrap{ max-width:1000px; margin:0 auto; padding:0 20px 60px; }
-    .hero{ background:linear-gradient(135deg,#2c5f2d 0%,#3f7d43 60%,#5a9a53 100%);
-      color:#fff; padding:44px 0 40px; margin-bottom:-28px; }
-    .hero .inner{ max-width:1000px; margin:0 auto; padding:0 20px; }
-    .hero h1{ margin:0; font-size:30px; font-weight:700; letter-spacing:-.5px; }
-    .hero p{ margin:8px 0 0; font-size:15px; opacity:.9; }
-    .search{ background:var(--card); border:1px solid var(--line); border-radius:16px;
-      box-shadow:0 8px 24px rgba(44,95,45,.08); padding:20px;
-      display:flex; flex-wrap:wrap; gap:10px; align-items:center; position:relative; z-index:2; }
-    .search select,.search input[type=text]{ appearance:none; border:1px solid var(--line);
-      background:#fbfcfa; border-radius:10px; padding:12px 14px; font-size:15px; color:var(--ink);
-      font-family:inherit; outline:none; transition:border-color .15s,box-shadow .15s; }
-    .search select:focus,.search input:focus{ border-color:var(--moss); box-shadow:0 0 0 3px rgba(74,124,89,.15); }
-    .search input[type=text]{ flex:1; min-width:180px; } .search select{ min-width:130px; }
-    .btn{ background:var(--forest); color:#fff; border:0; border-radius:10px; padding:12px 22px;
-      font-size:15px; font-weight:600; cursor:pointer; font-family:inherit; transition:background .15s,transform .05s; }
-    .btn:hover{ background:#24501f; } .btn:active{ transform:translateY(1px); }
-    .hint{ width:100%; color:var(--muted); font-size:12.5px; margin-top:2px; }
+    body{
+      margin:0; color:var(--ink); background:var(--paper);
+      font-family:'Pretendard','Malgun Gothic',sans-serif; -webkit-font-smoothing:antialiased;
+      /* 종이 질감: 아주 옅은 점 노이즈 */
+      background-image:
+        radial-gradient(circle at 20% 30%, rgba(0,0,0,.015) 0 1px, transparent 1px),
+        radial-gradient(circle at 70% 60%, rgba(0,0,0,.015) 0 1px, transparent 1px);
+      background-size:7px 7px, 11px 11px;
+    }
+    .latin{ font-family:'Bitter',serif; }
+    .wrap{ max-width:1040px; margin:0 auto; padding:0 20px 70px; }
+
+    /* ───────── HERO (공원 입구 간판) ───────── */
+    .hero{ position:relative; overflow:hidden; background:var(--pine); color:var(--paper);
+      padding:40px 0 46px; }
+    .hero::before{ /* 등고선 무늬 */
+      content:""; position:absolute; inset:0; opacity:.10; pointer-events:none;
+      background-image:
+        repeating-radial-gradient(circle at 50% 120%, transparent 0 26px, #fff 26px 27px);
+      background-size:100% 100%; }
+    .hero .inner{ position:relative; max-width:1040px; margin:0 auto; padding:0 20px;
+      display:flex; align-items:center; gap:26px; flex-wrap:wrap; justify-content:center; text-align:center; }
+    .emblem{ width:132px; height:132px; flex-shrink:0; filter:drop-shadow(0 4px 10px rgba(0,0,0,.25)); }
+    .hero-txt{ display:flex; flex-direction:column; align-items:center; }
+    .rule{ display:flex; align-items:center; gap:10px; color:var(--mustard); font-size:11px;
+      letter-spacing:.32em; font-weight:700; }
+    .rule::before,.rule::after{ content:""; height:1px; width:38px; background:currentColor; opacity:.6; }
+    .hero h1{ margin:8px 0 4px; font-size:38px; font-weight:800; letter-spacing:-.5px; line-height:1;
+      font-family:'Bitter',serif; }
+    .hero h1 .ko{ font-family:'Pretendard',sans-serif; }
+    .hero .sub{ margin:6px 0 0; font-size:13.5px; letter-spacing:.02em; opacity:.85; }
+    .hero .estab{ margin-top:12px; font-size:10.5px; letter-spacing:.35em; color:var(--mustard); font-weight:700; }
+
+    /* ───────── 검색 패널 (안내 데스크) ───────── */
+    .panel{ position:relative; z-index:3; margin-top:-24px; background:var(--card);
+      border:2px solid var(--pine); border-radius:4px; padding:22px 22px 18px;
+      box-shadow:0 14px 30px rgba(39,70,55,.16); }
+    .panel::before{ /* 안쪽 얇은 테두리(티켓 느낌) */
+      content:""; position:absolute; inset:6px; border:1px solid var(--line2); border-radius:2px; pointer-events:none; }
+    .panel-tag{ position:absolute; top:-13px; left:22px; background:var(--rust); color:#fff;
+      font-size:11px; font-weight:700; letter-spacing:.22em; padding:5px 14px; border-radius:2px;
+      font-family:'Bitter',serif; }
+    .search{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+    .fieldlab{ font-size:10.5px; letter-spacing:.18em; color:var(--pine); font-weight:700;
+      font-family:'Bitter',serif; width:100%; margin:2px 2px -2px; }
+    .search select,.search input[type=text]{ appearance:none; border:1.5px solid var(--line2);
+      background:#fffdf6; border-radius:3px; padding:12px 14px; font-size:15px; color:var(--ink);
+      font-family:inherit; outline:none; transition:border-color .15s, box-shadow .15s; }
+    .search select:focus,.search input:focus{ border-color:var(--pine); box-shadow:0 0 0 3px rgba(39,70,55,.14); }
+    .search select:disabled{ background:#efe8d6; color:var(--muted2); }
+    .search input[type=text]{ flex:1; min-width:190px; } .search select{ min-width:148px; }
+    .btn{ background:var(--rust); color:#fff; border:0; border-radius:3px; padding:12px 26px;
+      font-size:14px; font-weight:700; cursor:pointer; letter-spacing:.06em; font-family:inherit;
+      transition:background .15s, transform .05s; }
+    .btn:hover{ background:#963a22; } .btn:active{ transform:translateY(1px); }
+    .hint{ width:100%; color:var(--muted2); font-size:12px; margin-top:8px; }
+
+    /* ───────── 결과 바 ───────── */
     .result-bar{ display:flex; align-items:center; justify-content:space-between;
-      margin:28px 4px 16px; flex-wrap:wrap; gap:10px; }
-    .count{ font-size:15px; color:var(--body); } .count b{ color:var(--forest); font-size:18px; }
+      margin:30px 2px 18px; flex-wrap:wrap; gap:10px;
+      border-bottom:2px solid var(--line2); padding-bottom:14px; }
+    .count{ font-size:14px; color:var(--body); font-family:'Bitter',serif; letter-spacing:.02em; }
+    .count b{ color:var(--rust); font-size:20px; }
+    .count .meta{ color:var(--muted2); font-family:'Pretendard',sans-serif; }
     .download{ display:inline-flex; align-items:center; gap:6px; text-decoration:none;
-      background:#fff; border:1px solid var(--forest); color:var(--forest); border-radius:10px;
-      padding:9px 16px; font-size:14px; font-weight:600; transition:background .15s,color .15s; }
-    .download:hover{ background:var(--forest); color:#fff; }
-    .list{ display:grid; grid-template-columns:repeat(auto-fill,minmax(460px,1fr)); gap:14px; }
-    .camp{ background:var(--card); border:1px solid var(--line); border-radius:14px;
-      padding:18px 20px; box-shadow:0 4px 14px rgba(44,95,45,.05); }
-    .camp .top{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
-    .camp .name{ font-size:17px; font-weight:700; color:var(--ink); }
-    .resv{ background:var(--forest); color:#fff; text-decoration:none; font-size:12px; font-weight:600;
-      padding:6px 14px; border-radius:999px; flex-shrink:0; } .resv:hover{ background:#24501f; }
-    .types{ margin:10px 0 4px; display:flex; flex-wrap:wrap; gap:6px; }
-    .typ{ font-size:12.5px; font-weight:600; padding:5px 13px; border-radius:999px; }
-    .typ.glamp{ background:#fbe4d0; color:#a15c14; }
-    .typ.carav{ background:#e0ebf7; color:#2f5f9e; }
-    .typ.auto{ background:#e0efe9; color:#1f7a5a; }
-    .typ.normal{ background:#e7f0dd; color:#4a6b1f; }
-    .typ.etc{ background:#eeeeea; color:#6a6a63; }
-    .addr{ display:flex; align-items:center; gap:6px; color:var(--body); font-size:14px; margin:8px 0 2px; }
-    .tel{ color:var(--muted); font-size:13px; margin-top:4px; }
-    /* ── 소요시간 버튼/결과 ── */
-    .timebox{ margin-top:10px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-    .timebtn{ background:#eef3ea; border:1px solid var(--line); color:var(--forest);
-      border-radius:999px; padding:7px 14px; font-size:13px; font-weight:600; cursor:pointer;
-      font-family:inherit; transition:background .15s,color .15s; }
-    .timebtn:hover{ background:var(--forest); color:#fff; }
-    .timebtn:disabled{ background:#eef3ea; color:var(--muted); cursor:default; }
-    .timeresult{ font-size:13.5px; font-weight:600; color:var(--forest); }
-    .timeresult.err{ color:#d33; font-weight:500; }
-    .facil{ margin-top:11px; display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
-    .clabel{ width:100%; font-size:11.5px; color:var(--muted); font-weight:600; margin:6px 0 1px; }
-    .clabel:first-child{ margin-top:0; }
-    .chip{ display:inline-block; background:#eef3ea; color:var(--moss); font-size:12px;
-      padding:4px 10px; border-radius:8px; white-space:nowrap; }
-    .chip.num{ background:#eaf0f6; color:#3a6ea5; }
-    .pager{ margin:26px 0 0; text-align:center; }
-    .pager a,.pager b{ display:inline-block; min-width:40px; margin:0 3px; padding:9px 12px;
-      border:1px solid var(--line); border-radius:10px; text-decoration:none; color:var(--body);
-      font-size:14px; background:#fff; }
-    .pager a:hover{ border-color:var(--moss); color:var(--forest); }
-    .pager b{ background:var(--forest); color:#fff; border-color:var(--forest); font-weight:600; }
-    .empty{ background:var(--card); border:1px dashed var(--line); border-radius:16px;
-      padding:56px 24px; text-align:center; color:var(--muted); font-size:15px; }
-    .empty .big{ font-size:34px; margin-bottom:10px; }
-    @media (max-width:560px){ .search{ flex-direction:column; align-items:stretch; }
-      .search select,.search input,.btn{ width:100%; } .list{ grid-template-columns:1fr; } }
+      background:transparent; border:1.5px solid var(--pine); color:var(--pine); border-radius:3px;
+      padding:9px 16px; font-size:13px; font-weight:700; letter-spacing:.02em;
+      transition:background .15s, color .15s; }
+    .download:hover{ background:var(--pine); color:var(--paper); }
+
+    /* ───────── 카드 (여권 스탬프) ───────── */
+    .list{ display:grid; grid-template-columns:repeat(auto-fill,minmax(468px,1fr)); gap:18px; }
+    .camp{ position:relative; background:var(--card); border:1.5px solid var(--line2);
+      border-radius:5px; padding:20px 22px 22px; box-shadow:0 5px 16px rgba(39,70,55,.07); }
+    .camp::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:6px;
+      background:var(--pine); border-radius:5px 0 0 5px; }
+    .camp .no{ position:absolute; top:14px; right:16px; font-family:'Bitter',serif; font-weight:800;
+      font-size:12px; color:var(--line2); letter-spacing:.1em; }
+
+    /* 1) 이름 + 예약 */
+    .top{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding-right:34px; }
+    .name{ font-size:19px; font-weight:800; color:var(--ink); line-height:1.3; letter-spacing:-.3px; }
+    .resv{ background:var(--rust); color:#fff; text-decoration:none; font-size:11.5px; font-weight:700;
+      letter-spacing:.08em; padding:7px 15px; border-radius:2px; flex-shrink:0; font-family:'Bitter',serif; }
+    .resv:hover{ background:#963a22; }
+
+    /* 2) 운영/관리 기관 */
+    .org{ margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; }
+    .org .tag{ font-size:11.5px; color:var(--body); background:#f0e8d3; border:1px solid var(--line);
+      padding:3px 9px; border-radius:2px; }
+    .org .tag b{ color:var(--pine); font-weight:700; font-family:'Bitter',serif; letter-spacing:.04em; }
+
+    /* 3) 업종 */
+    .types{ margin:13px 0 2px; display:flex; flex-wrap:wrap; gap:6px; }
+    .typ{ font-size:12px; font-weight:700; padding:5px 12px; border-radius:2px; border:1px solid transparent; }
+    .typ.glamp{ background:#f0e2c0; color:#8a6414; border-color:#e0cd9e; }
+    .typ.carav{ background:#dce6dd; color:#2f5a44; border-color:#c3d4c6; }
+    .typ.auto{ background:#e2ddcb; color:#6a5a2e; border-color:#d2c9ad; }
+    .typ.normal{ background:#dfe7d3; color:#4f6a2c; border-color:#cad7b6; }
+    .typ.etc{ background:#e9e2d0; color:#726a55; border-color:#d8cfb6; }
+
+    /* 4) 주소 + 소요시간 */
+    .addr{ display:flex; align-items:center; flex-wrap:wrap; gap:8px 10px; color:var(--body);
+      font-size:14px; margin:14px 0 0; line-height:1.5; }
+    .addr .addr-text{ flex:1 1 auto; min-width:200px; }
+    .addr .pin{ color:var(--rust); }
+    .timebtn{ background:transparent; border:1.5px solid var(--pine2); color:var(--pine);
+      border-radius:2px; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer;
+      font-family:'Bitter',serif; letter-spacing:.03em; white-space:nowrap; flex-shrink:0;
+      transition:background .15s, color .15s; }
+    .timebtn:hover{ background:var(--pine); color:var(--paper); }
+    .timebtn:disabled{ border-color:var(--line2); color:var(--muted2); background:transparent; cursor:default; }
+    .timeresult{ font-size:13px; font-weight:700; color:var(--pine); white-space:nowrap; }
+    .timeresult.err{ color:var(--rust); font-weight:600; white-space:normal; }
+    .tel{ color:var(--muted2); font-size:13px; margin-top:6px; }
+
+    /* 구분선 (스탬프 점선) */
+    .divider{ border:0; border-top:1.5px dashed var(--line2); margin:16px 0 14px; }
+
+    /* 섹션 라벨 */
+    .sect{ display:flex; align-items:center; gap:9px; font-family:'Bitter',serif; font-weight:700;
+      font-size:11px; letter-spacing:.2em; color:var(--pine); margin:0 0 10px; }
+    .sect::after{ content:""; flex:1; height:1px; background:var(--line); }
+    .sect .star{ color:var(--mustard); }
+
+    /* 5) 사이트 구성 */
+    .sites{ display:flex; flex-wrap:wrap; gap:9px; }
+    .site-badge{ display:flex; flex-direction:column; align-items:center; min-width:64px;
+      border:1.5px solid var(--line2); border-radius:3px; padding:7px 12px 6px; background:#fffdf6; }
+    .site-badge .n{ font-family:'Bitter',serif; font-weight:800; font-size:19px; line-height:1; }
+    .site-badge .cap{ font-size:10.5px; letter-spacing:.06em; margin-top:3px; color:var(--muted2); font-weight:600; }
+    .site-badge.deck{ border-color:#bcd0bf; } .site-badge.deck .n{ color:var(--pine); }
+    .site-badge.grvl{ border-color:#ddc78d; } .site-badge.grvl .n{ color:#9a7420; }
+    .site-badge.carv{ border-color:#d9b3a6; } .site-badge.carv .n{ color:var(--rust); }
+    .site-badge.hyg{ border-color:#c9c2ae; } .site-badge.hyg .n{ color:#6a6047; }
+
+    /* 6) 시설 */
+    .facil{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+    .clabel{ width:100%; font-size:11px; color:var(--muted2); font-weight:700; letter-spacing:.04em;
+      margin:9px 0 2px; } .clabel:first-child{ margin-top:0; }
+    .chip{ display:inline-block; background:#f0e8d3; color:var(--pine); font-size:12px; font-weight:500;
+      padding:4px 10px; border-radius:2px; border:1px solid var(--line); white-space:nowrap; }
+
+    /* 페이지 */
+    .pager{ margin:30px 0 0; text-align:center; }
+    .pager a,.pager b{ display:inline-block; min-width:42px; margin:0 3px; padding:9px 12px;
+      border:1.5px solid var(--line2); border-radius:2px; text-decoration:none; color:var(--body);
+      font-size:14px; background:var(--card); font-family:'Bitter',serif; font-weight:700; }
+    .pager a:hover{ border-color:var(--pine); color:var(--pine); }
+    .pager b{ background:var(--pine); color:var(--paper); border-color:var(--pine); }
+
+    .empty{ background:var(--card); border:1.5px dashed var(--line2); border-radius:5px;
+      padding:60px 24px; text-align:center; color:var(--muted2); font-size:15px; margin-top:26px; }
+    .empty .big{ font-size:40px; margin-bottom:12px; }
+    .empty .lead{ font-family:'Bitter',serif; font-weight:700; color:var(--pine); font-size:16px;
+      letter-spacing:.04em; margin-bottom:6px; }
+
+    footer{ text-align:center; margin-top:44px; color:var(--muted2); font-size:11.5px; letter-spacing:.18em;
+      font-family:'Bitter',serif; }
+
+    @media (max-width:560px){
+      .search select,.search input,.btn{ width:100%; }
+      .list{ grid-template-columns:1fr; }
+      .hero h1{ font-size:30px; }
+    }
   </style>
 </head>
 <body>
+
+  <!-- ═══════════ HERO ═══════════ -->
   <header class="hero">
     <div class="inner">
-      <h1>전국 캠핑장 검색</h1>
-      <p>전국 캠핑장을 지역·업종·시설로 찾아보세요</p>
+      <!-- 손으로 그린 국립공원 배지 엠블럼 -->
+      <svg class="emblem" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-label="캠핑장 안내소 엠블럼">
+        <defs>
+          <clipPath id="scene"><circle cx="100" cy="100" r="60"/></clipPath>
+          <path id="arcTop" d="M 30 100 A 70 70 0 0 1 170 100" fill="none"/>
+        </defs>
+        <!-- 바깥 링 -->
+        <circle cx="100" cy="100" r="94" fill="#f3ecdb" stroke="#274637" stroke-width="5"/>
+        <circle cx="100" cy="100" r="85" fill="none" stroke="#274637" stroke-width="1.5"/>
+        <!-- 안쪽 장면 배경 -->
+        <circle cx="100" cy="100" r="61" fill="#e7dcc0" stroke="#274637" stroke-width="2.5"/>
+        <g clip-path="url(#scene)">
+          <rect x="40" y="40" width="120" height="120" fill="#dfe7d3"/>
+          <!-- 해 + 햇살 -->
+          <g stroke="#cf9a34" stroke-width="2.4" stroke-linecap="round">
+            <line x1="100" y1="58" x2="100" y2="48"/>
+            <line x1="118" y1="62" x2="124" y2="54"/>
+            <line x1="82" y1="62" x2="76" y2="54"/>
+            <line x1="130" y1="74" x2="139" y2="70"/>
+            <line x1="70" y1="74" x2="61" y2="70"/>
+          </g>
+          <circle cx="100" cy="78" r="13" fill="#cf9a34"/>
+          <!-- 뒷산 -->
+          <polygon points="40,132 78,86 116,132" fill="#3c6349"/>
+          <polygon points="92,132 126,90 160,132" fill="#3c6349"/>
+          <!-- 앞산 + 설산 -->
+          <polygon points="58,138 104,80 150,138" fill="#274637"/>
+          <polygon points="104,80 92,96 100,94 108,104 116,96" fill="#f3ecdb"/>
+          <!-- 소나무 -->
+          <g fill="#1f3a2c">
+            <polygon points="70,138 62,122 78,122"/>
+            <polygon points="70,128 63,114 77,114"/>
+            <polygon points="70,120 64,108 76,108"/>
+            <rect x="68.5" y="136" width="3" height="6"/>
+          </g>
+          <!-- 텐트 -->
+          <g>
+            <polygon points="118,138 130,116 142,138" fill="#b1492e"/>
+            <polygon points="127,138 130,116 133,138" fill="#f3ecdb"/>
+            <polygon points="130,116 133,116 145,138 142,138" fill="#8f3a22"/>
+          </g>
+          <!-- 땅 -->
+          <rect x="40" y="138" width="120" height="22" fill="#8a6a3f"/>
+          <rect x="40" y="138" width="120" height="3" fill="#6f5330"/>
+        </g>
+        <!-- 위쪽 곡선 텍스트 -->
+        <text font-family="Bitter, serif" font-size="13.5" font-weight="800" fill="#274637"
+              letter-spacing="2.2">
+          <textPath href="#arcTop" startOffset="50%" text-anchor="middle">NALGAE CAMP</textPath>
+        </text>
+        <!-- 좌우 별 -->
+        <text x="30" y="104" font-size="12" fill="#b1492e" text-anchor="middle">✦</text>
+        <text x="170" y="104" font-size="12" fill="#b1492e" text-anchor="middle">✦</text>
+        <!-- 아래 리본 -->
+        <g>
+          <rect x="60" y="150" width="80" height="19" rx="2" fill="#274637"/>
+          <polygon points="60,150 52,159 60,169" fill="#1c3327"/>
+          <polygon points="140,150 148,159 140,169" fill="#1c3327"/>
+          <text x="100" y="163.5" font-family="Bitter, serif" font-size="9.5" font-weight="700"
+                fill="#f3ecdb" letter-spacing="2" text-anchor="middle">EST · 2026</text>
+        </g>
+      </svg>
+
+      <div class="hero-txt">
+        <div class="rule latin">NATIONAL CAMPGROUND GUIDE</div>
+        <h1><span class="ko">전국 캠핑장</span> ANESO</h1>
+        <p class="sub">전국의 야영장을 지역 · 업종 · 시설로 찾아보는 안내소</p>
+        <div class="estab latin">FIND · CAMP · REST</div>
+      </div>
     </div>
   </header>
 
   <div class="wrap">
-    <form class="search" method="get" action="/">
-      <select name="sido">
-        <option value="">시도 전체</option>
-        {% for s in sido_list %}
-          <option value="{{ s }}" {% if s == sido %}selected{% endif %}>{{ s }}</option>
-        {% endfor %}
-      </select>
-      <select name="sigungu">
-        <option value="">시군구 전체</option>
-        {% for g in sigungu_list %}
-          <option value="{{ g }}" {% if g == sigungu %}selected{% endif %}>{{ g }}</option>
-        {% endfor %}
-      </select>
-      <input type="text" name="region" value="{{ region }}" placeholder="키워드 (예: 글램핑, 전기)">
-      <select name="mode">
-        <!-- <option value="and" {% if mode != 'or' %}selected{% endif %}>모두 포함(AND)</option>
-        <option value="or"  {% if mode == 'or' %}selected{% endif %}>하나라도 포함(OR)</option> -->
-      </select>
-      <button class="btn" type="submit">검색</button>
-      <div class="hint">시도를 고르고 검색하면 시군구 목록이 채워집니다. · 각 캠핑장의 소요시간 버튼을 누르면 현재 위치 기준 이동시간이 나옵니다.</div>
+    <!-- ═══════════ 검색 패널 ═══════════ -->
+    <form class="panel" method="get" action="/">
+      <span class="panel-tag latin">SEARCH DESK</span>
+      <div class="search">
+        <div class="fieldlab">REGION · 지역</div>
+        <select name="sido" id="sido">
+          <option value="">시도 전체</option>
+          {% for s in sido_list %}
+            <option value="{{ s }}" {% if s == sido %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+        <select name="sigungu" id="sigungu">
+          <option value="">시군구 전체</option>
+          {% for g in sigungu_list %}
+            <option value="{{ g }}" {% if g == sigungu %}selected{% endif %}>{{ g }}</option>
+          {% endfor %}
+        </select>
+        <input type="text" name="region" value="{{ region }}" placeholder="키워드 (예: 글램핑, 전기)">
+        <button class="btn latin" type="submit">SEARCH</button>
+        <div class="hint">시도를 고르면 시군구가 바로 채워집니다. · 각 캠핑장의 소요시간 버튼을 누르면 현재 위치 기준 이동시간이 나옵니다.</div>
+      </div>
     </form>
 
     {% if region or sido or sigungu %}
       <div class="result-bar">
         <div class="count">
-          <b>{{ total }}</b>개 검색됨
-          <span style="color:var(--muted)">— {{ sido }} {{ sigungu }} {{ region }}</span>
-          {% if total_pages > 1 %}<span style="color:var(--muted)">· {{ page }}/{{ total_pages }} 페이지</span>{% endif %}
+          <b>{{ total }}</b> RESULTS
+          <span class="meta">— {{ sido }} {{ sigungu }} {{ region }}</span>
+          {% if total_pages > 1 %}<span class="meta">· {{ page }}/{{ total_pages }} 페이지</span>{% endif %}
         </div>
         {% if total %}
-        <a class="download" href="/download?region={{ region }}&mode={{ mode }}&sido={{ sido }}&sigungu={{ sigungu }}">⬇ 엑셀(CSV)로 저장</a>
+        <a class="download latin" href="/download?region={{ region }}&mode={{ mode }}&sido={{ sido }}&sigungu={{ sigungu }}">⬇ CSV 저장</a>
         {% endif %}
       </div>
 
@@ -128,11 +309,23 @@
       <div class="list">
       {% for r in rows %}
         <div class="camp">
+          <span class="no latin">No.{{ '%03d' % (loop.index + (page-1)*20) }}</span>
+
+          <!-- 1) 캠핑장명 + 예약 -->
           <div class="top">
             <span class="name">{{ r["캠핑장명"] }}</span>
             {% if r["예약페이지"] %}<a class="resv" href="{{ r['예약페이지'] }}" target="_blank">예약</a>{% endif %}
           </div>
 
+          <!-- 2) 운영 / 관리 -->
+          {% if r["운영기관"] or r["관리기관"] %}
+          <div class="org">
+            {% if r["운영기관"] %}<span class="tag"><b>운영</b> {{ r["운영기관"] }}</span>{% endif %}
+            {% if r["관리기관"] %}<span class="tag"><b>관리</b> {{ r["관리기관"] }}</span>{% endif %}
+          </div>
+          {% endif %}
+
+          <!-- 3) 업종 -->
           {% set type_list = r["업종"].split(',') | map('trim') | select | list %}
           {% if type_list %}
           <div class="types">
@@ -142,23 +335,46 @@
           </div>
           {% endif %}
 
-          <div class="addr">📍 {{ r["주소"] }}</div>
+          <!-- 4) 주소 + 소요시간 -->
+          <div class="addr">
+            <span class="addr-text"><span class="pin">◆</span> {{ r["주소"] }}</span>
+            {% if r["위도"] and r["경도"] %}
+            <button class="timebtn" data-lat="{{ r['위도'] }}" data-lng="{{ r['경도'] }}">🚗 소요시간</button>
+            <span class="timeresult"></span>
+            {% endif %}
+          </div>
           {% if r["전화번호"] %}<div class="tel">☎ {{ r["전화번호"] }}</div>{% endif %}
 
-          {% if r["위도"] and r["경도"] %}
-          <div class="timebox">
-            <button class="timebtn" data-lat="{{ r['위도'] }}" data-lng="{{ r['경도'] }}">🚗 현재 위치에서 소요시간</button>
-            <span class="timeresult"></span>
+          <hr class="divider">
+
+          <!-- 5) 사이트 구성 -->
+          {% set deck   = r["데크사이트"] %}
+          {% set gravel = r["파쇄석사이트"] %}
+          {% set carav  = r["카라반사이트"] %}
+          {% set toilet = r["화장실(개)"] %}
+          {% set shower = r["샤워실(개)"] %}
+          {% if (deck and deck != '0') or (gravel and gravel != '0') or (carav and carav != '0')
+                or (toilet and toilet != '0') or (shower and shower != '0') %}
+          <div class="sect"><span class="star">✦</span> SITES · 사이트 구성</div>
+          <div class="sites">
+            {% if deck and deck != '0' %}<span class="site-badge deck"><span class="n">{{ deck }}</span><span class="cap">데크</span></span>{% endif %}
+            {% if gravel and gravel != '0' %}<span class="site-badge grvl"><span class="n">{{ gravel }}</span><span class="cap">파쇄석</span></span>{% endif %}
+            {% if carav and carav != '0' %}<span class="site-badge carv"><span class="n">{{ carav }}</span><span class="cap">카라반</span></span>{% endif %}
+            {% if toilet and toilet != '0' %}<span class="site-badge hyg"><span class="n">{{ toilet }}</span><span class="cap">화장실</span></span>{% endif %}
+            {% if shower and shower != '0' %}<span class="site-badge hyg"><span class="n">{{ shower }}</span><span class="cap">샤워실</span></span>{% endif %}
           </div>
           {% endif %}
 
+          <!-- 6) 시설 -->
           {% set main_f = r["주요시설"].split(',') | map('trim') | select | list %}
+          {% if main_f %}
           {% set cat_def = [
               ('기본·편의', ['전기','무선','와이','인터넷','온수','장작','마트','편의','매점','자판기','냉장','전자레인지','바베큐','바비큐']),
               ('위생', ['화장실','샤워','개수','세면','오물','정화']),
               ('레저·놀이', ['물놀이','놀이','운동','트램','트렘','산책','수영','낚시','계곡','캠프파이어','수상','자전거','썰매'])
           ] %}
           {% set ns = namespace(used=[]) %}
+          <div class="sect" style="margin-top:16px"><span class="star">✦</span> FACILITIES · 시설</div>
           <div class="facil">
             {% for label, keys in cat_def %}
               {% set grp = [] %}
@@ -178,32 +394,67 @@
               <span class="clabel">기타</span>
               {% for f in rest %}<span class="chip">{{ f }}</span>{% endfor %}
             {% endif %}
-
           </div>
+          {% endif %}
         </div>
       {% endfor %}
       </div>
 
       {% if total_pages > 1 %}
       <div class="pager">
-        {% if page > 1 %}<a href="/?region={{ region }}&mode={{ mode }}&sido={{ sido }}&sigungu={{ sigungu }}&page={{ page - 1 }}">이전</a>{% endif %}
+        {% if page > 1 %}<a href="/?region={{ region }}&mode={{ mode }}&sido={{ sido }}&sigungu={{ sigungu }}&page={{ page - 1 }}">‹</a>{% endif %}
         {% for p in page_numbers %}
           {% if p == page %}<b>{{ p }}</b>{% else %}<a href="/?region={{ region }}&mode={{ mode }}&sido={{ sido }}&sigungu={{ sigungu }}&page={{ p }}">{{ p }}</a>{% endif %}
         {% endfor %}
-        {% if page < total_pages %}<a href="/?region={{ region }}&mode={{ mode }}&sido={{ sido }}&sigungu={{ sigungu }}&page={{ page + 1 }}">다음</a>{% endif %}
+        {% if page < total_pages %}<a href="/?region={{ region }}&mode={{ mode }}&sido={{ sido }}&sigungu={{ sigungu }}&page={{ page + 1 }}">›</a>{% endif %}
       </div>
       {% endif %}
 
       {% else %}
-        <div class="empty"><div class="big">🔍</div>검색 결과가 없습니다. 다른 조건으로 검색해 보세요.</div>
+        <div class="empty">
+          <div class="big">🧭</div>
+          <div class="lead latin">NO RESULTS</div>
+          검색 결과가 없습니다. 다른 조건으로 찾아보세요.
+        </div>
       {% endif %}
     {% else %}
-      <div class="empty"><div class="big">⛺</div>시도를 고르거나 키워드를 입력해 검색해 보세요.<br>시도만 골라도 그 지역 전체가 나옵니다.</div>
+      <div class="empty">
+        <div class="big">⛺</div>
+        <div class="lead latin">WELCOME, EXPLORER</div>
+        시도를 고르거나 키워드를 입력해 검색해 보세요.<br>시도만 골라도 그 지역 전체가 나옵니다.
+      </div>
     {% endif %}
+
+    <footer>NALGAE CAMP · NATIONAL CAMPGROUND GUIDE · EST. 2026</footer>
   </div>
 
   <script>
-    // 현재 위치는 한 번만 받아서 재사용한다 (버튼 누를 때마다 다시 안 물어봄)
+    // ── 시도를 고르면 시군구 목록을 바로 채운다 (검색 버튼 안 눌러도 됨) ──
+    const sidoSel = document.getElementById('sido');
+    const sigunguSel = document.getElementById('sigungu');
+    if (sidoSel && sigunguSel) {
+      sidoSel.addEventListener('change', async () => {
+        const sido = sidoSel.value;
+        sigunguSel.innerHTML = '<option value="">시군구 전체</option>';
+        if (!sido) return;
+        sigunguSel.disabled = true;
+        try {
+          const res = await fetch('/api/sigungu?sido=' + encodeURIComponent(sido));
+          const list = await res.json();
+          for (const g of list) {
+            const opt = document.createElement('option');
+            opt.value = g;
+            opt.textContent = g;
+            sigunguSel.appendChild(opt);
+          }
+        } catch (e) {
+          // 목록을 못 불러와도 '시군구 전체'만 남겨둔다
+        }
+        sigunguSel.disabled = false;
+      });
+    }
+
+    // ── 소요시간: 현재 위치는 한 번만 받아서 재사용 ──
     let myLoc = null;
     function ensureLocation(){
       return new Promise((resolve, reject)=>{
@@ -217,7 +468,6 @@
       });
     }
 
-    // 각 카드의 소요시간 버튼에 클릭 동작 연결
     document.querySelectorAll('.timebtn').forEach((btn)=>{
       btn.addEventListener('click', async ()=>{
         const out = btn.nextElementSibling;   // 옆의 .timeresult
@@ -236,7 +486,7 @@
             return;
           }
           out.textContent = ` 약 ${d.time_text} · ${d.distance_km}km`;
-          btn.disabled = true;               // 계산 끝나면 버튼 비활성화
+          btn.disabled = true;
         }catch(e){
           out.className = "timeresult err";
           out.textContent = " " + e;

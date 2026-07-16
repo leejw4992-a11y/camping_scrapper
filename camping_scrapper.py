@@ -1,12 +1,20 @@
+import os
 import csv
+import time
 import requests
 
-SERVICE_KEY = "1f7e167f547aa29e1a582a5ff739306d50e293a9e06b92d24e559287785468b8"
+# 환경변수(SERVICE_KEY)가 있으면 그걸 쓰고, 없으면 아래 기본값을 쓴다.
+SERVICE_KEY = os.environ.get(
+    "SERVICE_KEY",
+    "1f7e167f547aa29e1a582a5ff739306d50e293a9e06b92d24e559287785468b8",
+)
 BASE_URL = "https://apis.data.go.kr/B551011/GoCamping/basedList"
 NUM_OF_ROWS = 1000
 
 FIELD_MAP = {
     "facltNm" : "캠핑장명",
+    "facltDivNm" : "운영기관",   # ← 추가: 사업주체(공공/민간)
+    "mangeDivNm" : "관리기관",   # ← 추가: 관리형태(직영/위탁)
     "induty" : "업종",
     "addr1" : "주소",
     "sbrsCl" : "주요시설",
@@ -25,6 +33,22 @@ FIELD_MAP = {
 }
 
 
+def _get_with_retry(params, tries=3):
+    """공공데이터 서버가 가끔 느리거나 잠깐 끊길 때를 대비해 몇 번 다시 시도한다.
+    (Render 무료 플랜은 한동안 안 쓰면 잠들었다가 깨어나며 데이터를 다시 받아오는데,
+     그때 한 번 실패해도 곧바로 죽지 않도록 하기 위함)"""
+    last_error = None
+    for i in range(tries):
+        try:
+            res = requests.get(BASE_URL, params=params, timeout=30)
+            res.raise_for_status()
+            return res
+        except Exception as e:
+            last_error = e
+            time.sleep(1.5 * (i + 1))   # 1.5초, 3초 … 점점 길게 쉬었다 재시도
+    raise RuntimeError(f"공공데이터 API 연결에 계속 실패했습니다: {last_error}")
+
+
 def fetch_all_items():
     all_items = []
     page_no = 1
@@ -39,8 +63,7 @@ def fetch_all_items():
             "_type" : "json"
         }
 
-        res = requests.get(BASE_URL, params=params, timeout=20)
-        res.raise_for_status()
+        res = _get_with_retry(params)
 
         try:
             body = res.json()["response"]["body"]

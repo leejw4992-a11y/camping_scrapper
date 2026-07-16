@@ -1,0 +1,15 @@
+# 파이썬
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# 비밀 키 (혹시 .env로 관리할 경우 깃에 안 올라가게)
+.env
+
+# 실행 중 생성되는 결과물
+*.csv
+
+# 운영체제
+.DS_Store
+Thumbs.db
