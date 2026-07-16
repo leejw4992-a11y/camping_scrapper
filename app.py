@@ -1,6 +1,7 @@
 import io
 import os
 import csv
+import time
 import datetime
 import requests
 from flask import Flask,request, render_template, Response, jsonify
@@ -109,98 +110,104 @@ WEATHER_CODES = {
 
 WEEKDAYS = ["월", "화", "수", "목", "금", "토", "일"]
 
+# 날씨 캐시: 좌표(소수1자리 반올림)별로 주말 예보를 잠시 저장해 Open-Meteo 호출을 줄인다
+_weather_cache = {}          # key "la,ln" -> {"days": [...], "ts": epoch}
+_WEATHER_TTL = 3 * 60 * 60   # 3시간 동안 캐시 재사용
 
-def _weekend_indices(dates):
-    """예보 날짜 목록에서 '다가오는 금요일'을 찾아 금·토·일 3일의 인덱스를 돌려준다."""
-    parsed = [datetime.date.fromisoformat(x) for x in dates]
-    fri = None
-    for i, dt in enumerate(parsed):
-        if dt.weekday() == 4:   # 금요일
-            fri = i
-            break
-    if fri is None:
-        return list(range(min(3, len(dates))))
-    return [i for i in (fri, fri + 1, fri + 2) if i < len(dates)]
+
+def _weekend_dates():
+    """다가오는 금·토·일 날짜 3개를 돌려준다.
+    (오늘이 토/일이면 이번 주말은 지났으니 다음 주 금요일 기준)"""
+    today = datetime.date.today()
+    days_to_fri = (4 - today.weekday()) % 7   # 금요일(=4)까지 남은 일수
+    fri = today + datetime.timedelta(days=days_to_fri)
+    return [fri, fri + datetime.timedelta(days=1), fri + datetime.timedelta(days=2)]
 
 
 @app.route("/api/weather", methods=["POST"])
 def api_weather():
-    """여러 캠핑장 좌표를 한 번에 받아, 다가오는 주말(금·토·일) 예보를 돌려준다.
+    """여러 캠핑장 좌표를 받아 다가오는 주말(금·토·일) 예보를 돌려준다.
     무료 서비스 Open-Meteo 사용 (API 키 불필요).
-    요청 본문 예: {"points": [[37.5,127.9],[37.8,127.5], ...]}"""
+    호출을 아끼려고 (1) 좌표를 소수1자리로 반올림해 가까운 곳끼리 묶고
+    (2) 결과를 잠시 캐시하며 (3) 딱 주말 3일치만 요청한다."""
     body = request.get_json(silent=True) or {}
     points = body.get("points") or []
     if not points:
         return jsonify({"ok": False, "error": "좌표가 없어요."})
 
-    # 유효한 숫자 좌표만 추려서 보낸다.
-    # (좌표 하나가 빈 값·0·한국 범위 밖이면 그 요청 전체가 실패할 수 있어서 미리 걸러냄)
-    valid = []   # (원래 순번, 위도, 경도)
+    # 유효 좌표만 추리고, 날씨는 정밀도가 필요 없어 소수 1자리로 반올림한다
+    valid = []   # (원래순번, "la,ln")
     for idx, p in enumerate(points):
         try:
-            lat = float(p[0])
-            lng = float(p[1])
+            lat = round(float(p[0]), 1)
+            lng = round(float(p[1]), 1)
         except (TypeError, ValueError, IndexError):
             continue
         if not (33.0 <= lat <= 39.0 and 124.0 <= lng <= 132.0):
             continue   # 한국(남한) 범위 밖이면 제외
-        valid.append((idx, lat, lng))
-
-    print(f"[날씨] 받은 좌표 {len(points)}개 중 유효 {len(valid)}개")
+        valid.append((idx, f"{lat},{lng}"))
 
     results = [{"ok": False} for _ in points]
     if not valid:
-        # 보낼 만한 좌표가 하나도 없으면 그냥 빈 결과
-        print("[날씨] 유효한 좌표가 없어 요청 안 함")
         return jsonify({"ok": True, "list": results})
 
-    params = {
-        "latitude": ",".join(str(v[1]) for v in valid),
-        "longitude": ",".join(str(v[2]) for v in valid),
-        "daily": "weather_code,temperature_2m_max,temperature_2m_min",
-        "timezone": "Asia/Seoul",
-        "forecast_days": 10,   # 다음 주말까지 확실히 포함되도록 넉넉히
-    }
-    try:
-        res = requests.get("https://api.open-meteo.com/v1/forecast", params=params, timeout=15)
-        data = res.json()
-    except Exception as e:
-        print("[날씨] 연결 실패:", e)
-        return jsonify({"ok": False, "error": f"날씨 서버 연결 실패: {e}"})
+    now = time.time()
+    # 캐시에 없거나 오래된 좌표만 모아서 한 번에 요청
+    need = []
+    for _, key in valid:
+        c = _weather_cache.get(key)
+        if key not in need and (not c or now - c["ts"] > _WEATHER_TTL):
+            need.append(key)
 
-    # Open-Meteo가 오류를 돌려주면 그 이유를 그대로 보여준다(원인 파악용)
-    if isinstance(data, dict) and data.get("error"):
-        print("[날씨] Open-Meteo 오류:", data.get("reason"))
-        return jsonify({"ok": False, "error": f"Open-Meteo: {data.get('reason')}"})
+    print(f"[날씨] 좌표 {len(points)}개 · 유효 {len(valid)} · 새로 조회 {len(need)}")
 
-    # 좌표가 하나면 dict, 여러 개면 list로 온다
-    locs = data if isinstance(data, list) else [data]
-    try:
-        weekend = _weekend_indices(locs[0]["daily"]["time"])
-    except Exception as ex:
-        print("[날씨] 파싱 실패:", ex, "| 응답 일부:", str(data)[:300])
-        return jsonify({"ok": False, "error": "예보를 읽지 못했어요."})
-
-    # 걸러낸 좌표 순서대로 결과를 원래 순번 자리에 채워 넣는다
-    for (orig_idx, _, _), loc in zip(valid, locs):
+    if need:
+        wd = _weekend_dates()
+        params = {
+            "latitude": ",".join(k.split(",")[0] for k in need),
+            "longitude": ",".join(k.split(",")[1] for k in need),
+            "daily": "weather_code,temperature_2m_max,temperature_2m_min",
+            "timezone": "Asia/Seoul",
+            "start_date": wd[0].isoformat(),
+            "end_date": wd[2].isoformat(),
+        }
         try:
-            d = loc["daily"]
-            days = []
-            for i in weekend:
-                code = int(d["weather_code"][i])
-                icon, desc = WEATHER_CODES.get(code, ("🌡️", "날씨"))
-                dt = datetime.date.fromisoformat(d["time"][i])
-                days.append({
-                    "label": WEEKDAYS[dt.weekday()],
-                    "date": dt.strftime("%m/%d"),
-                    "icon": icon,
-                    "desc": desc,
-                    "tmax": round(d["temperature_2m_max"][i]),
-                    "tmin": round(d["temperature_2m_min"][i]),
-                })
-            results[orig_idx] = {"ok": True, "days": days}
-        except Exception:
-            results[orig_idx] = {"ok": False}
+            res = requests.get("https://api.open-meteo.com/v1/forecast", params=params, timeout=15)
+            data = res.json()
+        except Exception as e:
+            print("[날씨] 연결 실패:", e)
+            return jsonify({"ok": False, "error": f"날씨 서버 연결 실패: {e}"})
+
+        if isinstance(data, dict) and data.get("error"):
+            print("[날씨] Open-Meteo 오류:", data.get("reason"))
+            return jsonify({"ok": False, "error": f"Open-Meteo: {data.get('reason')}"})
+
+        locs = data if isinstance(data, list) else [data]
+        for key, loc in zip(need, locs):
+            try:
+                d = loc["daily"]
+                days = []
+                for i in range(len(d["time"])):
+                    code = int(d["weather_code"][i])
+                    icon, desc = WEATHER_CODES.get(code, ("🌡️", "날씨"))
+                    dt = datetime.date.fromisoformat(d["time"][i])
+                    days.append({
+                        "label": WEEKDAYS[dt.weekday()],
+                        "date": dt.strftime("%m/%d"),
+                        "icon": icon,
+                        "desc": desc,
+                        "tmax": round(d["temperature_2m_max"][i]),
+                        "tmin": round(d["temperature_2m_min"][i]),
+                    })
+                _weather_cache[key] = {"days": days, "ts": now}
+            except Exception as ex:
+                print("[날씨] 파싱 실패:", ex, "| 응답 일부:", str(loc)[:200])
+
+    # 캐시에서 각 좌표 결과를 원래 자리에 채운다
+    for orig_idx, key in valid:
+        c = _weather_cache.get(key)
+        if c:
+            results[orig_idx] = {"ok": True, "days": c["days"]}
 
     return jsonify({"ok": True, "list": results})
 
