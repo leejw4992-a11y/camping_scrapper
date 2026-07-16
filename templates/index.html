@@ -161,7 +161,7 @@
   <header class="topbar">
     <div class="in">
       <div class="brand">
-        <span class="mark">⛺</span>
+        <!-- <span class="mark">⛺</span> -->
         <span>캠핑나침반<small>전국 캠핑장을 한 곳에서</small></span>
       </div>
     </div>
@@ -227,7 +227,7 @@
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#25774d" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
         검색
       </button>
-      <div class="hint">시도를 고르면 시군구가 바로 채워집니다 · 소요시간 버튼을 누르면 현재 위치 기준 이동시간이 나옵니다.</div>
+      <!-- <div class="hint">시도를 고르면 시군구가 바로 채워집니다 · 소요시간 버튼을 누르면 현재 위치 기준 이동시간이 나옵니다.</div> -->
     </form>
   </div>
 
@@ -250,7 +250,7 @@
         <div class="row">
           <!-- 대표사진 -->
           <div class="thumb">
-            <div class="ph">⛺</div>
+            <!-- <div class="ph">⛺</div> -->
             {% if r["대표사진"] %}<img src="{{ r['대표사진']|replace('http://','https://') }}" alt="{{ r['캠핑장명'] }}" loading="lazy" onerror="this.style.display='none'">{% endif %}
           </div>
 
@@ -333,10 +333,10 @@
       {% endif %}
 
       {% else %}
-        <div class="empty"><div class="big">🔍</div><div class="lead">검색 결과가 없습니다</div>다른 조건으로 찾아보세요.</div>
+        <div class="empty"><div class="big"></div><div class="lead">검색 결과가 없습니다</div>다른 조건으로 찾아보세요.</div>
       {% endif %}
     {% else %}
-      <div class="empty"><div class="big">⛺</div><div class="lead">어디로 떠나볼까요?</div>위에서 시도를 고르거나 키워드를 입력해 검색해 보세요. 시도만 골라도 그 지역 전체가 나옵니다.</div>
+      <div class="empty"><div class="big"></div><div class="lead">어디로 떠나볼까요?</div></div>
     {% endif %}
 
     <footer>캠핑나침반 · 전국 캠핑장 검색 · 데이터 제공: 한국관광공사 고캠핑 공공데이터</footer>
