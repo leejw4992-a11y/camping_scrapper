@@ -7,6 +7,7 @@ NUM_OF_ROWS = 1000
 
 FIELD_MAP = {
     "facltNm" : "캠핑장명",
+    "induty" : "업종",
     "addr1" : "주소",
     "sbrsCl" : "주요시설",
     "toiletCo" : "화장실(개)",

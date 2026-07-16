@@ -7,22 +7,17 @@
   <link rel="stylesheet" as="style" crossorigin
         href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
   <style>
-    :root{
-      --forest:#2c5f2d; --moss:#4a7c59;
-      --bg:#f6f8f5; --card:#ffffff; --ink:#233225; --body:#5b6b5d;
-      --muted:#8a988c; --line:#e6ebe4;
-    }
+    :root{ --forest:#2c5f2d; --moss:#4a7c59; --bg:#f6f8f5; --card:#ffffff;
+      --ink:#233225; --body:#5b6b5d; --muted:#8a988c; --line:#e6ebe4; }
     *{ box-sizing:border-box; }
     body{ margin:0; background:var(--bg); color:var(--ink);
       font-family:'Pretendard','Malgun Gothic',sans-serif; -webkit-font-smoothing:antialiased; }
     .wrap{ max-width:1000px; margin:0 auto; padding:0 20px 60px; }
-
     .hero{ background:linear-gradient(135deg,#2c5f2d 0%,#3f7d43 60%,#5a9a53 100%);
       color:#fff; padding:44px 0 40px; margin-bottom:-28px; }
     .hero .inner{ max-width:1000px; margin:0 auto; padding:0 20px; }
     .hero h1{ margin:0; font-size:30px; font-weight:700; letter-spacing:-.5px; }
     .hero p{ margin:8px 0 0; font-size:15px; opacity:.9; }
-
     .search{ background:var(--card); border:1px solid var(--line); border-radius:16px;
       box-shadow:0 8px 24px rgba(44,95,45,.08); padding:20px;
       display:flex; flex-wrap:wrap; gap:10px; align-items:center; position:relative; z-index:2; }
@@ -30,64 +25,58 @@
       background:#fbfcfa; border-radius:10px; padding:12px 14px; font-size:15px; color:var(--ink);
       font-family:inherit; outline:none; transition:border-color .15s,box-shadow .15s; }
     .search select:focus,.search input:focus{ border-color:var(--moss); box-shadow:0 0 0 3px rgba(74,124,89,.15); }
-    .search input[type=text]{ flex:1; min-width:180px; }
-    .search select{ min-width:130px; }
+    .search input[type=text]{ flex:1; min-width:180px; } .search select{ min-width:130px; }
     .btn{ background:var(--forest); color:#fff; border:0; border-radius:10px; padding:12px 22px;
       font-size:15px; font-weight:600; cursor:pointer; font-family:inherit; transition:background .15s,transform .05s; }
     .btn:hover{ background:#24501f; } .btn:active{ transform:translateY(1px); }
     .hint{ width:100%; color:var(--muted); font-size:12.5px; margin-top:2px; }
-
     .result-bar{ display:flex; align-items:center; justify-content:space-between;
       margin:28px 4px 16px; flex-wrap:wrap; gap:10px; }
-    .count{ font-size:15px; color:var(--body); }
-    .count b{ color:var(--forest); font-size:18px; }
+    .count{ font-size:15px; color:var(--body); } .count b{ color:var(--forest); font-size:18px; }
     .download{ display:inline-flex; align-items:center; gap:6px; text-decoration:none;
       background:#fff; border:1px solid var(--forest); color:var(--forest); border-radius:10px;
       padding:9px 16px; font-size:14px; font-weight:600; transition:background .15s,color .15s; }
     .download:hover{ background:var(--forest); color:#fff; }
-
     .list{ display:grid; grid-template-columns:repeat(auto-fill,minmax(460px,1fr)); gap:14px; }
     .camp{ background:var(--card); border:1px solid var(--line); border-radius:14px;
       padding:18px 20px; box-shadow:0 4px 14px rgba(44,95,45,.05); }
     .camp .top{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
     .camp .name{ font-size:17px; font-weight:700; color:var(--ink); }
-    .camp .right{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
-    .pet{ font-size:12px; font-weight:600; padding:4px 10px; border-radius:999px; }
-    .pet.ok{ background:#e7f3e2; color:var(--forest); }
-    .pet.no{ background:#f0efe9; color:var(--muted); }
     .resv{ background:var(--forest); color:#fff; text-decoration:none; font-size:12px; font-weight:600;
-      padding:6px 14px; border-radius:999px; }
-    .resv:hover{ background:#24501f; }
-    .addr{ display:flex; align-items:center; gap:6px; color:var(--body); font-size:14px; margin:9px 0 2px; }
+      padding:6px 14px; border-radius:999px; flex-shrink:0; } .resv:hover{ background:#24501f; }
+    .types{ margin:10px 0 4px; display:flex; flex-wrap:wrap; gap:6px; }
+    .typ{ font-size:12.5px; font-weight:600; padding:5px 13px; border-radius:999px; }
+    .typ.glamp{ background:#fbe4d0; color:#a15c14; }
+    .typ.carav{ background:#e0ebf7; color:#2f5f9e; }
+    .typ.auto{ background:#e0efe9; color:#1f7a5a; }
+    .typ.normal{ background:#e7f0dd; color:#4a6b1f; }
+    .typ.etc{ background:#eeeeea; color:#6a6a63; }
+    .addr{ display:flex; align-items:center; gap:6px; color:var(--body); font-size:14px; margin:8px 0 2px; }
     .tel{ color:var(--muted); font-size:13px; margin-top:4px; }
     .facil{ margin-top:11px; display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
-    .glabel{ font-size:11.5px; color:var(--muted); font-weight:600; margin:0 2px 0 4px; }
+    .clabel{ width:100%; font-size:11.5px; color:var(--muted); font-weight:600; margin:6px 0 1px; }
+    .clabel:first-child{ margin-top:0; }
     .chip{ display:inline-block; background:#eef3ea; color:var(--moss); font-size:12px;
       padding:4px 10px; border-radius:8px; white-space:nowrap; }
     .chip.num{ background:#eaf0f6; color:#3a6ea5; }
-
     .pager{ margin:26px 0 0; text-align:center; }
     .pager a,.pager b{ display:inline-block; min-width:40px; margin:0 3px; padding:9px 12px;
       border:1px solid var(--line); border-radius:10px; text-decoration:none; color:var(--body);
       font-size:14px; background:#fff; }
     .pager a:hover{ border-color:var(--moss); color:var(--forest); }
     .pager b{ background:var(--forest); color:#fff; border-color:var(--forest); font-weight:600; }
-
     .empty{ background:var(--card); border:1px dashed var(--line); border-radius:16px;
       padding:56px 24px; text-align:center; color:var(--muted); font-size:15px; }
     .empty .big{ font-size:34px; margin-bottom:10px; }
-    @media (max-width:560px){
-      .search{ flex-direction:column; align-items:stretch; }
-      .search select,.search input,.btn{ width:100%; }
-      .list{ grid-template-columns:1fr; }
-    }
+    @media (max-width:560px){ .search{ flex-direction:column; align-items:stretch; }
+      .search select,.search input,.btn{ width:100%; } .list{ grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
   <header class="hero">
     <div class="inner">
       <h1>🏕️ 전국 캠핑장 검색</h1>
-      <p>공공데이터 고캠핑 API로 전국 캠핑장을 지역·시설 조건으로 찾아보세요</p>
+      <p>공공데이터 고캠핑 API로 전국 캠핑장을 지역·업종·시설로 찾아보세요</p>
     </div>
   </header>
 
@@ -105,7 +94,7 @@
           <option value="{{ g }}" {% if g == sigungu %}selected{% endif %}>{{ g }}</option>
         {% endfor %}
       </select>
-      <input type="text" name="region" value="{{ region }}" placeholder="키워드 (예: 전기, 데크)">
+      <input type="text" name="region" value="{{ region }}" placeholder="키워드 (예: 글램핑, 전기)">
       <select name="mode">
         <option value="and" {% if mode != 'or' %}selected{% endif %}>모두 포함(AND)</option>
         <option value="or"  {% if mode == 'or' %}selected{% endif %}>하나라도 포함(OR)</option>
@@ -132,25 +121,48 @@
         <div class="camp">
           <div class="top">
             <span class="name">{{ r["캠핑장명"] }}</span>
-            <span class="right">
-              {% if r["반려동물_동반여부"] %}
-                <span class="pet {% if '가능' in r['반려동물_동반여부'] and '불' not in r['반려동물_동반여부'] %}ok{% else %}no{% endif %}">반려동물 {{ r["반려동물_동반여부"] }}</span>
-              {% endif %}
-              {% if r["예약페이지"] %}<a class="resv" href="{{ r['예약페이지'] }}" target="_blank">예약</a>{% endif %}
-            </span>
+            {% if r["예약페이지"] %}<a class="resv" href="{{ r['예약페이지'] }}" target="_blank">예약</a>{% endif %}
           </div>
+
+          {% set type_list = r["업종"].split(',') | map('trim') | select | list %}
+          {% if type_list %}
+          <div class="types">
+            {% for t in type_list %}
+              <span class="typ {% if '글램핑' in t %}glamp{% elif '카라반' in t %}carav{% elif '자동차' in t %}auto{% elif '일반' in t %}normal{% else %}etc{% endif %}">{{ t }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+
           <div class="addr">📍 {{ r["주소"] }}</div>
           {% if r["전화번호"] %}<div class="tel">☎ {{ r["전화번호"] }}</div>{% endif %}
 
           {% set main_f = r["주요시설"].split(',') | map('trim') | select | list %}
+          {% set cat_def = [
+              ('기본·편의', ['전기','무선','와이','인터넷','온수','장작','마트','편의','매점','자판기','냉장','전자레인지','바베큐','바비큐']),
+              ('위생', ['화장실','샤워','개수','세면','오물','정화']),
+              ('레저·놀이', ['물놀이','놀이','운동','트램','트렘','산책','수영','낚시','계곡','캠프파이어','수상','자전거','썰매'])
+          ] %}
+          {% set ns = namespace(used=[]) %}
           <div class="facil">
-            {% for f in main_f %}<span class="chip">{{ f }}</span>{% endfor %}
+            {% for label, keys in cat_def %}
+              {% set grp = [] %}
+              {% for f in main_f %}
+                {% set hit = namespace(v=false) %}
+                {% for k in keys %}{% if k in f %}{% set hit.v = true %}{% endif %}{% endfor %}
+                {% if hit.v and f not in ns.used %}{% set _ = grp.append(f) %}{% set _ = ns.used.append(f) %}{% endif %}
+              {% endfor %}
+              {% if grp %}
+                <span class="clabel">{{ label }}</span>
+                {% for f in grp %}<span class="chip">{{ f }}</span>{% endfor %}
+              {% endif %}
+            {% endfor %}
+            {% set rest = [] %}
+            {% for f in main_f %}{% if f not in ns.used %}{% set _ = rest.append(f) %}{% endif %}{% endfor %}
+            {% if rest %}
+              <span class="clabel">기타</span>
+              {% for f in rest %}<span class="chip">{{ f }}</span>{% endfor %}
+            {% endif %}
 
-            {% if r["데크사이트"] and r["데크사이트"] != "0" %}<span class="chip num">데크 {{ r["데크사이트"] }}</span>{% endif %}
-            {% if r["파쇄석사이트"] and r["파쇄석사이트"] != "0" %}<span class="chip num">파쇄석 {{ r["파쇄석사이트"] }}</span>{% endif %}
-            {% if r["카라반사이트"] and r["카라반사이트"] != "0" %}<span class="chip num">카라반 {{ r["카라반사이트"] }}</span>{% endif %}
-            {% if r["화장실(개)"] and r["화장실(개)"] != "0" %}<span class="chip num">화장실 {{ r["화장실(개)"] }}</span>{% endif %}
-            {% if r["샤워실(개)"] and r["샤워실(개)"] != "0" %}<span class="chip num">샤워실 {{ r["샤워실(개)"] }}</span>{% endif %}
           </div>
         </div>
       {% endfor %}
