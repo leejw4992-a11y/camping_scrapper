@@ -28,6 +28,13 @@ DIRECTION_URLS = [
     "https://naveropenapi.apigw.ntruss.com/map-direction/v1/driving",
 ]
 
+# ============================================================
+# 장소(경유지) 키워드 검색용 카카오 REST API 키
+# developers.kakao.com > 내 애플리케이션 > 앱 키 > REST API 키 (무료)
+# 예: '이마트' 검색 시 현재 위치 주변 이마트를 가까운 순으로 보여준다.
+# ============================================================
+KAKAO_REST_KEY = os.environ.get("58132092c212435f3a1420d087c0bd8f")
+
 
 @app.route("/healthz")
 def healthz():
@@ -214,52 +221,54 @@ def api_weather():
 
 @app.route("/api/place")
 def api_place():
-    """장소/주소를 검색해 좌표(위도·경도)를 돌려준다. (경유지=장보기 지점 찾기용)
-    네이버 지오코딩 API 사용 — 소요시간과 '같은 네이버 키'를 그대로 쓴다.
-    ※ 주소·건물명 위주로 잘 찾는다. 'OO 이마트', '원주 하나로마트'처럼
-      지역명을 붙이거나 도로명 주소로 검색하면 더 잘 나온다."""
+    """키워드로 장소를 검색해 목록을 돌려준다. (경유지=장보기 지점 찾기용)
+    카카오 로컬 '키워드' 검색 API 사용. 현재 위치(lat,lng)를 함께 주면
+    반경 20km 안에서 가까운 순으로 정렬해 준다.
+    예: '이마트' + 내 위치 -> 내 주변 이마트 목록(가까운 순)."""
     q = request.args.get("query", "").strip()
+    lat = request.args.get("lat", "").strip()   # 현재 위치 위도 (선택)
+    lng = request.args.get("lng", "").strip()   # 현재 위치 경도 (선택)
     if not q:
         return jsonify({"ok": False, "error": "검색어가 없어요."})
 
-    headers = {
-        "x-ncp-apigw-api-key-id": NAVER_KEY_ID,
-        "x-ncp-apigw-api-key": NAVER_KEY,
-    }
-    geocode_urls = [
-        "https://maps.apigw.ntruss.com/map-geocode/v2/geocode",
-        "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode",
-    ]
-    for url in geocode_urls:
+    headers = {"Authorization": f"KakaoAK {KAKAO_REST_KEY}"}
+    params = {"query": q, "size": 15}
+    if lat and lng:
+        # x=경도, y=위도, 반경 20km 안에서 가까운 순 정렬
+        params.update({"x": lng, "y": lat, "radius": 20000, "sort": "distance"})
+
+    try:
+        res = requests.get("https://dapi.kakao.com/v2/local/search/keyword.json",
+                           params=params, headers=headers, timeout=10)
+        data = res.json()
+    except Exception as e:
+        print("[장소검색] 연결 실패:", e)
+        return jsonify({"ok": False, "error": f"장소 검색 실패: {e}"})
+
+    docs = data.get("documents")
+    if docs is None:
+        print("[장소검색] 예상 밖 응답:", str(data)[:200])
+        return jsonify({"ok": False, "error": "장소 검색에 실패했어요. (카카오 REST 키를 확인하세요)"})
+
+    items = []
+    for it in docs:
         try:
-            res = requests.get(url, params={"query": q}, headers=headers, timeout=10)
-            data = res.json()
-        except Exception as e:
-            print("[장소검색] 연결 실패:", e)
+            m = it.get("distance")
+            dist = ""
+            if m not in (None, ""):
+                m = int(m)
+                dist = f"{m}m" if m < 1000 else f"{round(m / 1000, 1)}km"
+            items.append({
+                "name": it.get("place_name", ""),
+                "addr": it.get("road_address_name") or it.get("address_name", ""),
+                "lat": float(it["y"]),   # 위도
+                "lng": float(it["x"]),   # 경도
+                "dist": dist,
+            })
+        except Exception:
             continue
 
-        addrs = data.get("addresses")
-        if addrs is None:
-            print("[장소검색] 예상 밖 응답:", str(data)[:200])
-            continue
-
-        items = []
-        for a in addrs[:5]:
-            try:
-                items.append({
-                    "name": a.get("roadAddress") or a.get("jibunAddress") or q,
-                    "addr": a.get("jibunAddress") or a.get("roadAddress") or "",
-                    "lat": float(a["y"]),   # 위도
-                    "lng": float(a["x"]),   # 경도
-                })
-            except Exception:
-                continue
-
-        if items:
-            return jsonify({"ok": True, "items": items})
-        return jsonify({"ok": False, "error": "장소를 못 찾았어요. 주소나 '지역명+상호'로 검색해 보세요."})
-
-    return jsonify({"ok": False, "error": "장소 검색 서버에 연결하지 못했어요."})
+    return jsonify({"ok": True, "items": items})
 
 
 @app.route("/api/duration")

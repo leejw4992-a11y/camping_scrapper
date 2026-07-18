@@ -78,6 +78,7 @@
     .wp-results .wp-item:last-child{ border-bottom:0; }
     .wp-results .wp-item:hover{ background:var(--orange-l); }
     .wp-results .wp-nm{ font-weight:700; color:var(--ink); font-size:13.5px; }
+    .wp-results .wp-dist{ color:var(--orange-d); font-size:11.5px; font-weight:700; }
     .wp-results .wp-ad{ color:var(--muted); font-size:12px; margin-top:2px; }
     .wp-results .wp-empty{ padding:12px 14px; font-size:13px; color:var(--muted); }
 
@@ -413,16 +414,21 @@
       const q = wpQ.value.trim();
       if(!q) return;
       wpResults.style.display='block';
+      wpResults.innerHTML = '<div class="wp-empty">내 위치 확인 중…</div>';
+      let locPart = '';
+      try{ const loc = await ensureLocation(); locPart = `&lat=${loc.lat}&lng=${loc.lng}`; }
+      catch(e){ /* 위치를 못 얻으면 키워드로만 검색 */ }
       wpResults.innerHTML = '<div class="wp-empty">검색 중…</div>';
       try{
-        const res = await fetch('/api/place?query=' + encodeURIComponent(q));
+        const res = await fetch('/api/place?query=' + encodeURIComponent(q) + locPart);
         const d = await res.json();
         if(!d.ok || !d.items || !d.items.length){
           wpResults.innerHTML = '<div class="wp-empty">' + (d.error || '결과가 없어요.') + '</div>';
           return;
         }
         wpResults.innerHTML = d.items.map((it,i)=>
-          `<div class="wp-item" data-i="${i}"><div class="wp-nm">${it.name}</div>`
+          `<div class="wp-item" data-i="${i}"><div class="wp-nm">${it.name}`
+          + (it.dist ? ` <span class="wp-dist">${it.dist}</span>` : '') + `</div>`
           + (it.addr ? `<div class="wp-ad">${it.addr}</div>` : '') + `</div>`).join('');
         wpResults.querySelectorAll('.wp-item').forEach(el=>{
           el.addEventListener('click', ()=>{
