@@ -7,6 +7,8 @@ import requests
 from flask import Flask,request, render_template, Response, jsonify
 
 from camping_scrapper import get_campsites, get_sido_list, get_sigungu_list,FIELD_MAP
+from dotenv import load_dotenv
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -18,8 +20,8 @@ PER_PAGE = 20
 # ============================================================
 # 보안을 위해 Render 대시보드의 Environment(환경변수)에 넣는 걸 권장.
 # 환경변수가 없으면 아래 기본값을 그대로 쓰므로, 안 넣어도 일단 동작은 한다.
-NAVER_KEY_ID = os.environ.get("NAVER_KEY_ID", "dvm06v1qnm")
-NAVER_KEY    = os.environ.get("NAVER_KEY", "SWo3XbOhDFxDzBCFIxkeMeIgcK3GxrD1K5gSsUZB")
+NAVER_KEY_ID = os.environ.get("NAVER_KEY_ID", "")
+NAVER_KEY    = os.environ.get("NAVER_KEY", "")
 
 # 네이버가 도메인을 두 가지로 운영 중이라, 되는 쪽을 자동으로 찾는다
 # (새 Maps = maps..., 구형 = naveropenapi...)
@@ -33,7 +35,7 @@ DIRECTION_URLS = [
 # developers.kakao.com > 내 애플리케이션 > 앱 키 > REST API 키 (무료)
 # 예: '이마트' 검색 시 현재 위치 주변 이마트를 가까운 순으로 보여준다.
 # ============================================================
-KAKAO_REST_KEY = os.environ.get("KAKAO_REST_KEY", "58132092c212435f3a1420d087c0bd8f")
+KAKAO_REST_KEY = os.environ.get("KAKAO_REST_KEY", "")
 
 
 @app.route("/healthz")

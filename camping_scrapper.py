@@ -3,6 +3,9 @@ import csv
 import time
 import requests
 
+from dotenv import load_dotenv
+load_dotenv()
+
 # 환경변수(SERVICE_KEY)가 있으면 그걸 쓰고, 없으면 아래 기본값을 쓴다.
 SERVICE_KEY = os.environ.get(
     "SERVICE_KEY",
@@ -34,7 +37,7 @@ FIELD_MAP = {
 }
 
 
-def _get_with_retry(params, tries=3):
+def _get_with_retry(params, tries=3): # 실패해도 몇번 더 시도하기
     """공공데이터 서버가 가끔 느리거나 잠깐 끊길 때를 대비해 몇 번 다시 시도한다.
     (Render 무료 플랜은 한동안 안 쓰면 잠들었다가 깨어나며 데이터를 다시 받아오는데,
      그때 한 번 실패해도 곧바로 죽지 않도록 하기 위함)"""
@@ -50,7 +53,7 @@ def _get_with_retry(params, tries=3):
     raise RuntimeError(f"공공데이터 API 연결에 계속 실패했습니다: {last_error}")
 
 
-def fetch_all_items():
+def fetch_all_items(): #전국데이터 전부 받기
     all_items = []
     page_no = 1
 
@@ -80,11 +83,11 @@ def fetch_all_items():
         item = items["item"]
         if isinstance(item, dict):
             item = [item]
-        all_items.extend(item)
+        all_items.extend(item)  #
 
         if len(all_items) >= int(body["totalCount"]):
             break
-        page_no += 1
+        page_no += 1  # 종료조건인데 전체개수만큼 모였으면 멈추어라는것.
 
     return all_items
 
