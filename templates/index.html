@@ -57,6 +57,30 @@
     .btn:hover{ background:#fff7f0; } .btn:active{ transform:translateY(1px); }
     .hint{ width:100%; color:#fff; opacity:.92; font-size:12.5px; margin:2px 2px 0; }
 
+    /* ── 경유지(장보기) 검색 바 ── */
+    .wp-bar{ position:relative; z-index:4; margin-top:12px; display:flex; flex-wrap:wrap; align-items:center;
+      gap:8px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 14px;
+      box-shadow:0 4px 14px rgba(0,0,0,.05); }
+    .wp-bar .wp-ico{ font-size:16px; }
+    .wp-bar .wp-label{ font-size:13px; font-weight:700; color:var(--body); white-space:nowrap; }
+    .wp-bar input{ flex:1; min-width:170px; border:1.5px solid var(--line); border-radius:9px; padding:9px 12px;
+      font-size:14px; color:var(--ink); font-family:inherit; outline:none; }
+    .wp-bar input:focus{ border-color:var(--orange); }
+    .wp-btn{ background:var(--orange); color:#fff; border:0; border-radius:9px; padding:9px 18px; font-size:13.5px;
+      font-weight:700; cursor:pointer; font-family:inherit; }
+    .wp-btn:hover{ background:var(--orange-d); }
+    .wp-chip{ display:inline-flex; align-items:center; gap:7px; background:var(--orange-l); color:var(--orange-d);
+      border-radius:999px; padding:6px 13px; font-size:12.5px; font-weight:700; }
+    .wp-chip .wp-x{ cursor:pointer; font-weight:800; }
+    .wp-results{ position:absolute; top:100%; left:14px; right:14px; margin-top:6px; background:var(--card);
+      border:1px solid var(--line); border-radius:10px; box-shadow:0 10px 26px rgba(0,0,0,.12); overflow:hidden; z-index:30; }
+    .wp-results .wp-item{ padding:10px 14px; cursor:pointer; border-bottom:1px solid var(--line); }
+    .wp-results .wp-item:last-child{ border-bottom:0; }
+    .wp-results .wp-item:hover{ background:var(--orange-l); }
+    .wp-results .wp-nm{ font-weight:700; color:var(--ink); font-size:13.5px; }
+    .wp-results .wp-ad{ color:var(--muted); font-size:12px; margin-top:2px; }
+    .wp-results .wp-empty{ padding:12px 14px; font-size:13px; color:var(--muted); }
+
     /* ── 본문 ── */
     .wrap{ max-width:1080px; margin:0 auto; padding:24px 20px 70px; }
     .result-bar{ display:flex; align-items:center; justify-content:space-between; margin:14px 2px 18px; flex-wrap:wrap; gap:10px; }
@@ -229,6 +253,16 @@
       </button>
       <!-- <div class="hint">시도를 고르면 시군구가 바로 채워집니다 · 소요시간 버튼을 누르면 현재 위치 기준 이동시간이 나옵니다.</div> -->
     </form>
+
+    <!-- 경유지(장보기) 검색: 여기를 넣으면 소요시간이 '현위치 → 이곳 → 캠핑장'으로 계산됩니다 -->
+    <div class="wp-bar">
+      <span class="wp-ico">🛒</span>
+      <span class="wp-label">장보기 경유지</span>
+      <input type="text" id="wpQuery" placeholder="마트·주소 검색 (예: 원주 하나로마트, 도로명 주소)">
+      <button type="button" id="wpSearch" class="wp-btn">검색</button>
+      <span id="wpChip" class="wp-chip" style="display:none;"></span>
+      <div id="wpResults" class="wp-results" style="display:none;"></div>
+    </div>
   </div>
 
   <div class="wrap">
@@ -364,6 +398,51 @@
       });
     }
 
+    // ── 경유지(장보기) 검색: 장소를 좌표로 바꿔 저장해 둔다 ──
+    let waypoint = null;   // {lat, lng, name}
+    const wpQ = document.getElementById('wpQuery');
+    const wpBtn = document.getElementById('wpSearch');
+    const wpResults = document.getElementById('wpResults');
+    const wpChip = document.getElementById('wpChip');
+    function resetTimes(){
+      document.querySelectorAll('.timebtn').forEach(b=>{ b.disabled=false; });
+      document.querySelectorAll('.timeresult').forEach(o=>{ o.textContent=''; o.className='timeresult'; });
+    }
+    function clearWaypoint(){ waypoint=null; wpChip.style.display='none'; wpChip.innerHTML=''; resetTimes(); }
+    async function searchPlace(){
+      const q = wpQ.value.trim();
+      if(!q) return;
+      wpResults.style.display='block';
+      wpResults.innerHTML = '<div class="wp-empty">검색 중…</div>';
+      try{
+        const res = await fetch('/api/place?query=' + encodeURIComponent(q));
+        const d = await res.json();
+        if(!d.ok || !d.items || !d.items.length){
+          wpResults.innerHTML = '<div class="wp-empty">' + (d.error || '결과가 없어요.') + '</div>';
+          return;
+        }
+        wpResults.innerHTML = d.items.map((it,i)=>
+          `<div class="wp-item" data-i="${i}"><div class="wp-nm">${it.name}</div>`
+          + (it.addr ? `<div class="wp-ad">${it.addr}</div>` : '') + `</div>`).join('');
+        wpResults.querySelectorAll('.wp-item').forEach(el=>{
+          el.addEventListener('click', ()=>{
+            const it = d.items[+el.dataset.i];
+            waypoint = { lat: it.lat, lng: it.lng, name: it.name };
+            wpChip.style.display = 'inline-flex';
+            wpChip.innerHTML = '🛒 ' + it.name + ' <span class="wp-x" title="경유지 해제">✕</span>';
+            wpChip.querySelector('.wp-x').addEventListener('click', clearWaypoint);
+            wpResults.style.display = 'none';
+            wpQ.value = '';
+            resetTimes();   // 경유지가 바뀌었으니 소요시간 다시 계산 가능하게
+          });
+        });
+      }catch(e){ wpResults.innerHTML = '<div class="wp-empty">검색 오류</div>'; }
+    }
+    if(wpBtn){
+      wpBtn.addEventListener('click', searchPlace);
+      wpQ.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); searchPlace(); } });
+    }
+
     let myLoc = null;
     function ensureLocation(){
       return new Promise((resolve, reject)=>{
@@ -384,11 +463,12 @@
         try{
           const loc = await ensureLocation();
           out.textContent = "계산 중...";
-          const url = `/api/duration?slat=${loc.lat}&slng=${loc.lng}&glat=${btn.dataset.lat}&glng=${btn.dataset.lng}`;
+          let url = `/api/duration?slat=${loc.lat}&slng=${loc.lng}&glat=${btn.dataset.lat}&glng=${btn.dataset.lng}`;
+          if(waypoint){ url += `&wlat=${waypoint.lat}&wlng=${waypoint.lng}`; }
           const res = await fetch(url);
           const d = await res.json();
           if(!d.ok){ out.className = "timeresult err"; out.textContent = d.error; return; }
-          out.textContent = `약 ${d.time_text} · ${d.distance_km}km`;
+          out.textContent = `약 ${d.time_text} · ${d.distance_km}km` + (waypoint ? ' 🛒경유' : '');
           btn.disabled = true;
         }catch(e){ out.className = "timeresult err"; out.textContent = e; }
       });

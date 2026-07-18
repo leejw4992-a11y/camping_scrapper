@@ -212,6 +212,56 @@ def api_weather():
     return jsonify({"ok": True, "list": results})
 
 
+@app.route("/api/place")
+def api_place():
+    """장소/주소를 검색해 좌표(위도·경도)를 돌려준다. (경유지=장보기 지점 찾기용)
+    네이버 지오코딩 API 사용 — 소요시간과 '같은 네이버 키'를 그대로 쓴다.
+    ※ 주소·건물명 위주로 잘 찾는다. 'OO 이마트', '원주 하나로마트'처럼
+      지역명을 붙이거나 도로명 주소로 검색하면 더 잘 나온다."""
+    q = request.args.get("query", "").strip()
+    if not q:
+        return jsonify({"ok": False, "error": "검색어가 없어요."})
+
+    headers = {
+        "x-ncp-apigw-api-key-id": NAVER_KEY_ID,
+        "x-ncp-apigw-api-key": NAVER_KEY,
+    }
+    geocode_urls = [
+        "https://maps.apigw.ntruss.com/map-geocode/v2/geocode",
+        "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode",
+    ]
+    for url in geocode_urls:
+        try:
+            res = requests.get(url, params={"query": q}, headers=headers, timeout=10)
+            data = res.json()
+        except Exception as e:
+            print("[장소검색] 연결 실패:", e)
+            continue
+
+        addrs = data.get("addresses")
+        if addrs is None:
+            print("[장소검색] 예상 밖 응답:", str(data)[:200])
+            continue
+
+        items = []
+        for a in addrs[:5]:
+            try:
+                items.append({
+                    "name": a.get("roadAddress") or a.get("jibunAddress") or q,
+                    "addr": a.get("jibunAddress") or a.get("roadAddress") or "",
+                    "lat": float(a["y"]),   # 위도
+                    "lng": float(a["x"]),   # 경도
+                })
+            except Exception:
+                continue
+
+        if items:
+            return jsonify({"ok": True, "items": items})
+        return jsonify({"ok": False, "error": "장소를 못 찾았어요. 주소나 '지역명+상호'로 검색해 보세요."})
+
+    return jsonify({"ok": False, "error": "장소 검색 서버에 연결하지 못했어요."})
+
+
 @app.route("/api/duration")
 def api_duration():
     """현재 위치(slat,slng) -> 캠핑장(glat,glng) 자동차 소요시간을 계산해서 돌려준다."""
@@ -219,6 +269,8 @@ def api_duration():
     slng = request.args.get("slng", "").strip()   # 내 위치 경도
     glat = request.args.get("glat", "").strip()   # 캠핑장 위도
     glng = request.args.get("glng", "").strip()   # 캠핑장 경도
+    wlat = request.args.get("wlat", "").strip()   # 경유지(장보기) 위도 - 선택
+    wlng = request.args.get("wlng", "").strip()   # 경유지(장보기) 경도 - 선택
 
     if not (slat and slng and glat and glng):
         return jsonify({"ok": False, "error": "좌표가 없어요."})
@@ -229,6 +281,9 @@ def api_duration():
         "goal": f"{glng},{glat}",
         "option": "traoptimal",
     }
+    # 경유지(장보기)가 있으면 그곳을 들르는 경로로 계산 (waypoints = 경도,위도)
+    if wlat and wlng:
+        params["waypoints"] = f"{wlng},{wlat}"
     headers = {
         "x-ncp-apigw-api-key-id": NAVER_KEY_ID,
         "x-ncp-apigw-api-key": NAVER_KEY,
