@@ -20,8 +20,8 @@ PER_PAGE = 20
 # ============================================================
 # 보안을 위해 Render 대시보드의 Environment(환경변수)에 넣는 걸 권장.
 # 환경변수가 없으면 아래 기본값을 그대로 쓰므로, 안 넣어도 일단 동작은 한다.
-NAVER_KEY_ID = os.environ.get("NAVER_KEY_ID", "")
-NAVER_KEY    = os.environ.get("NAVER_KEY", "")
+NAVER_KEY_ID = os.environ.get("NAVER_KEY_ID", "vm06v1qnm")
+NAVER_KEY    = os.environ.get("NAVER_KEY", "SWo3XbOhDFxDzBCFIxkeMeIgcK3GxrD1K5gSsUZB")
 
 # 네이버가 도메인을 두 가지로 운영 중이라, 되는 쪽을 자동으로 찾는다
 # (새 Maps = maps..., 구형 = naveropenapi...)
