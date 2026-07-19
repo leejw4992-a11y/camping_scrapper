@@ -35,7 +35,7 @@ DIRECTION_URLS = [
 # developers.kakao.com > 내 애플리케이션 > 앱 키 > REST API 키 (무료)
 # 예: '이마트' 검색 시 현재 위치 주변 이마트를 가까운 순으로 보여준다.
 # ============================================================
-KAKAO_REST_KEY = os.environ.get("KAKAO_REST_KEY", "")
+KAKAO_REST_KEY = os.environ.get("KAKAO_REST_KEY", "58132092c212435f3a1420d087c0bd8f")
 
 
 @app.route("/healthz")
