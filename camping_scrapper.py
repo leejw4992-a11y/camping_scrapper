@@ -9,7 +9,7 @@ load_dotenv()
 # 환경변수(SERVICE_KEY)가 있으면 그걸 쓰고, 없으면 아래 기본값을 쓴다.
 SERVICE_KEY = os.environ.get(
     "SERVICE_KEY",
-    "1f7e167f547aa29e1a582a5ff739306d50e293a9e06b92d24e559287785468b8",
+    "",
 )
 BASE_URL = "https://apis.data.go.kr/B551011/GoCamping/basedList"
 NUM_OF_ROWS = 1000
